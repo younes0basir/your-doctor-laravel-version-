@@ -1,0 +1,48 @@
+# Laravel Backend .gitignore
+
+# Environment files
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+
+# Dependencies
+/vendor/
+node_modules/
+
+# Build artifacts
+/public/hot
+/public/storage
+/storage/*.key
+
+# Logs
+/storage/logs/*.log
+npm-debug.log
+yarn-error.log
+
+# IDE files
+/.idea
+/.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+/phpunit.xml
+/tests/coverage/
+
+# Compiled files
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+
+# SQLite database
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+Thumbs.db

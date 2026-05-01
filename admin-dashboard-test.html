@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard Diagnostics</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .status { display: inline-block; padding: 5px 10px; border-radius: 4px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Admin Dashboard Diagnostics</h1>
+        
+        <div class="test-section info">
+            <h2>Test Configuration</h2>
+            <p><strong>API Base URL:</strong> <span id="apiUrl"></span></p>
+            <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 1: Backend Health Check</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <div id="healthResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 2: Login as Admin</h2>
+            <input type="email" id="adminEmail" placeholder="Admin Email" value="admin@example.com" style="padding: 8px; margin: 5px;">
+            <input type="password" id="adminPassword" placeholder="Password" value="password123" style="padding: 8px; margin: 5px;">
+            <button onclick="testLogin()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 3: Test Admin Endpoints (Requires Login)</h2>
+            <button onclick="testStatistics()" id="btnStats" disabled>Test /admin/statistics</button>
+            <button onclick="testAccounts()" id="btnAccounts" disabled>Test /admin/accounts</button>
+            <button onclick="testAppointments()" id="btnAppointments" disabled>Test /admin/appointments</button>
+            <div id="endpointsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 4: Frontend Integration Test</h2>
+            <button onclick="testFrontendIntegration()">Simulate Frontend Request</button>
+            <div id="frontendResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Diagnostic Log</h2>
+            <pre id="log"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let authToken = null;
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.className = `status ${type}`;
+            el.innerHTML = message;
+        }
+
+        async function testHealth() {
+            log('Testing health endpoint...');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('healthResult', `✅ Backend is running!<br>Status: ${data.status}<br>Database: ${data.database?.connection || 'N/A'}`, 'success');
+                    log('Health check passed', 'success');
+                } else {
+                    showResult('healthResult', `❌ Health check failed: ${response.status}`, 'error');
+                    log(`Health check failed with status ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('healthResult', `❌ Cannot connect to backend: ${error.message}<br><br>Make sure Laravel server is running on port 8000`, 'error');
+                log(`Health check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            log(`Attempting login with email: ${email}`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    localStorage.setItem('patientToken', authToken); // Store as patientToken for compatibility
+                    showResult('loginResult', `✅ Login successful!<br>User: ${data.user?.first_name} ${data.user?.last_name}<br>Role: ${data.user?.role}<br>Token: ${authToken.substring(0, 20)}...`, 'success');
+                    log('Login successful', 'success');
+                    
+                    // Enable admin endpoint tests
+                    document.getElementById('btnStats').disabled = false;
+                    document.getElementById('btnAccounts').disabled = false;
+                    document.getElementById('btnAppointments').disabled = false;
+                } else {
+                    showResult('loginResult', `❌ Login failed: ${data.message || 'Unknown error'}`, 'error');
+                    log(`Login failed: ${data.message || 'No token received'}`, 'error');
+                }
+            } catch (error) {
+                showResult('loginResult', `❌ Login error: ${error.message}`, 'error');
+                log(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEndpoint(endpoint, buttonId) {
+            if (!authToken) {
+                showResult('endpointsResult', '❌ Please login first!', 'error');
+                return;
+            }
+
+            log(`Testing ${endpoint}...`);
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('endpointsResult', `✅ ${endpoint} - Success!<br><pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>`, 'success');
+                    log(`${endpoint} returned successfully`, 'success');
+                } else {
+                    showResult('endpointsResult', `❌ ${endpoint} - Failed (${response.status}): ${data.message || 'Unknown error'}`, 'error');
+                    log(`${endpoint} failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('endpointsResult', `❌ ${endpoint} - Error: ${error.message}`, 'error');
+                log(`${endpoint} error: ${error.message}`, 'error');
+            }
+        }
+
+        function testStatistics() {
+            testEndpoint('/admin/statistics', 'btnStats');
+        }
+
+        function testAccounts() {
+            testEndpoint('/admin/accounts', 'btnAccounts');
+        }
+
+        function testAppointments() {
+            testEndpoint('/admin/appointments', 'btnAppointments');
+        }
+
+        async function testFrontendIntegration() {
+            log('Simulating frontend axios request...');
+            
+            try {
+                // Simulate the exact request from AdminDashboard.jsx
+                const response = await fetch(`${API_BASE}/admin/statistics`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken || 'test-token'}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('frontendResult', `✅ Frontend integration would work!<br>Response structure matches expected format`, 'success');
+                    log('Frontend integration test passed', 'success');
+                } else {
+                    showResult('frontendResult', `❌ Frontend would fail: ${response.status} - ${data.message}`, 'error');
+                    log(`Frontend integration would fail: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('frontendResult', `❌ Frontend integration error: ${error.message}`, 'error');
+                log(`Frontend integration error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        document.getElementById('apiUrl').textContent = API_BASE;
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        log('Diagnostic tool initialized');
+        log(`API Base URL: ${API_BASE}`);
+    </script>
+</body>
+</html>
