@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaEnvelope, FaSpinner } from 'react-icons/fa';
 
-const AssistantRegister = () => {
+const AssistantRegister = ({ onRegistered }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     email: '',
@@ -28,7 +28,11 @@ const AssistantRegister = () => {
         role: 'assistant'
       });
       toast.success('Assistant registered successfully!');
-      navigate('/doctor/assistants');
+      if (onRegistered) {
+        onRegistered();
+      } else {
+        navigate('/doctor/assistants');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
