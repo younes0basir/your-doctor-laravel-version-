@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AppContext } from '../../context/AppContext';
 import { toast } from 'react-toastify';
 import api from '../../requests';
 import { 
@@ -22,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DoctorSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useContext(AppContext);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
@@ -52,8 +54,7 @@ const DoctorSidebar = () => {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem('doctorToken');
-    localStorage.removeItem('doctor');
+    logout();
     toast.success('Logged out successfully');
     navigate('/login');
   };

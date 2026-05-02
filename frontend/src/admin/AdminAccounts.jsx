@@ -67,8 +67,8 @@ const AdminAccounts = () => {
       if (search) {
         const query = search.toLowerCase();
         filtered = filtered.filter(account => {
-          const firstName = account.firstName?.toLowerCase() || '';
-          const lastName = account.lastName?.toLowerCase() || '';
+          const firstName = account.first_name?.toLowerCase() || '';
+          const lastName = account.last_name?.toLowerCase() || '';
           const email = account.email?.toLowerCase() || '';
           return (
             firstName.includes(query) ||
@@ -80,7 +80,7 @@ const AdminAccounts = () => {
 
       // Filter by account type
       if (accountTypeFilter !== 'all') {
-        filtered = filtered.filter(account => account.type === accountTypeFilter);
+        filtered = filtered.filter(account => account.role === accountTypeFilter);
       }
 
       // Filter by status
@@ -98,7 +98,7 @@ const AdminAccounts = () => {
     try {
       await api.put(`/admin/doctors/${doctorId}/approve`);
       setAccounts(accounts => accounts.map(acc =>
-        acc.type === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
+        acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
       ));
       toast.success('Doctor approved successfully');
     } catch (error) {
@@ -111,7 +111,7 @@ const AdminAccounts = () => {
     try {
       await api.put(`/admin/doctors/${doctorId}/hide`);
       setAccounts(accounts => accounts.map(acc =>
-        acc.type === 'doctor' && acc.id === doctorId ? { ...acc, status: 'hidden' } : acc
+        acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'hidden' } : acc
       ));
       toast.success('Doctor hidden successfully');
     } catch (error) {
@@ -124,7 +124,7 @@ const AdminAccounts = () => {
     try {
       await api.put(`/admin/doctors/${doctorId}/unhide`);
       setAccounts(accounts => accounts.map(acc =>
-        acc.type === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
+        acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
       ));
       toast.success('Doctor unhidden successfully');
     } catch (error) {
@@ -133,8 +133,8 @@ const AdminAccounts = () => {
     }
   };
 
-  const handleDelete = (type, id) => {
-    setDeleteTarget({ type, id });
+    const handleDelete = (role, id) => {
+    setDeleteTarget({ role, id });
     setShowConfirm(true);
   };
 
@@ -142,7 +142,7 @@ const AdminAccounts = () => {
     if (!deleteTarget) return;
     try {
       await api.delete(`/admin/accounts/${deleteTarget.id}`);
-      setAccounts(accounts => accounts.filter(acc => !(acc.type === deleteTarget.type && acc.id === deleteTarget.id)));
+      setAccounts(accounts => accounts.filter(acc => !(acc.role === deleteTarget.role && acc.id === deleteTarget.id)));
       toast.success('Account deleted successfully');
     } catch (error) {
       console.error('Error deleting account:', error);
@@ -419,7 +419,7 @@ const AdminAccounts = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredAccounts.map((account) => (
-                    <tr key={`${account.type}-${account.id}`} className="hover:bg-gray-50">
+                    <tr key={`${account.role}-${account.id}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -427,7 +427,7 @@ const AdminAccounts = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {account.firstName} {account.lastName}
+                              {account.first_name} {account.last_name}
                             </div>
                             <div className="text-sm text-gray-500">
                               {account.email}
@@ -444,14 +444,14 @@ const AdminAccounts = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getTypeBadge(account.type)}
+                        {getTypeBadge(account.role)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(account.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          {account.type === 'doctor' && account.status === 'pending' && (
+                          {account.role === 'doctor' && account.status === 'pending' && (
                             <button
                               onClick={() => handleApproveDoctor(account.id)}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none"
@@ -459,7 +459,7 @@ const AdminAccounts = () => {
                               <FiCheckCircle className="mr-1" /> Approve
                             </button>
                           )}
-                          {account.type === 'doctor' && account.status === 'approved' && (
+                          {account.role === 'doctor' && account.status === 'approved' && (
                             <button
                               onClick={() => handleHideDoctor(account.id)}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none"
@@ -467,7 +467,7 @@ const AdminAccounts = () => {
                               <FiEyeOff className="mr-1" /> Hide
                             </button>
                           )}
-                          {account.type === 'doctor' && account.status === 'hidden' && (
+                          {account.role === 'doctor' && account.status === 'hidden' && (
                             <button
                               onClick={() => handleUnhideDoctor(account.id)}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
@@ -476,7 +476,7 @@ const AdminAccounts = () => {
                             </button>
                           )}
                           <button
-                            onClick={() => handleDelete(account.type, account.id)}
+                            onClick={() => handleDelete(account.role, account.id)}
                             className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none"
                           >
                             <FiTrash2 className="mr-1" /> Delete

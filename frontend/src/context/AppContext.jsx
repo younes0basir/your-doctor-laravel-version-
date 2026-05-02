@@ -34,7 +34,7 @@ export const AppContextProvider = ({ children }) => {
           console.log('Loading user data from API...');
           const response = await api.get('/user');
           console.log('User data loaded:', response.data);
-          setUserData(response.data);
+          setUserData(response.data?.user || response.data);
         } catch (error) {
           console.error('Failed to load user data:', error);
           // Don't clear tokens here - let the interceptor handle 401s

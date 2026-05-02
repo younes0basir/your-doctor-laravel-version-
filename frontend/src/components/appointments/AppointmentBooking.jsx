@@ -5,9 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { format, addDays, setHours, setMinutes, isBefore, isAfter, startOfToday } from 'date-fns';
 
-const API_URL = 'http://localhost:5000';
 
-const AppointmentBooking = ({ doctorId, onSuccess }) => {
+const AppointmentBooking = ({ doctorId, consultationFee, onSuccess }) => {
   const navigate = useNavigate();
   const { token, userData, logout } = useContext(AppContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -84,26 +83,28 @@ const AppointmentBooking = ({ doctorId, onSuccess }) => {
     console.log('Submitting appointment:', appointmentData);
 
     // Ensure all required fields are present
-    if (!doctorId || !userData.id || !appointmentData.appointment_date || !appointmentData.type) {
-      alert('Tous les champs sont requis');
+    if (!doctorId || !userData?.id || !appointmentData.appointment_date || !appointmentData.type) {
+      toast.error('Une erreur est survenue avec vos informations de réservation. Veuillez rafraîchir la page.');
+      console.error('Missing fields:', { doctorId, patientId: userData?.id, date: appointmentData.appointment_date, type: appointmentData.type });
       return;
     }
 
+    // Split datetime for backend expectations
+    const formattedDate = format(selectedTime, 'yyyy-MM-dd');
+    const formattedTime = format(selectedTime, 'HH:mm:ss');
+    const mappedType = appointmentData.type === 'video' ? 'follow-up' : 'consultation';
+
     try {
       const response = await api.post(
-        `${API_URL}/api/appointments`,
+        '/appointments',
         {
           doctor_id: doctorId,
           patient_id: userData.id,
-          appointment_date: appointmentData.appointment_date,
-          type: appointmentData.type
-        },
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'patient-token': localStorage.getItem('patientToken')
-          }
+          appointment_date: formattedDate,
+          appointment_time: formattedTime,
+          type: mappedType,
+          reason: 'Consultation',
+          amount: consultationFee || 0
         }
       );
       
