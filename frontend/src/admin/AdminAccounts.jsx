@@ -41,7 +41,7 @@ const AdminAccounts = () => {
     setLoading(true);
     try {
       console.log('Fetching admin accounts...');
-      const response = await api.get('/admin/accounts');
+      const response = await api.get('/admin/users');
       
       // Handle paginated response
       const accountsData = response.data?.data || response.data || [];
@@ -96,7 +96,7 @@ const AdminAccounts = () => {
 
   const handleApproveDoctor = async (doctorId) => {
     try {
-      await api.put(`/admin/doctors/${doctorId}/approve`);
+      await api.patch(`/admin/doctors/${doctorId}`, { status: 'approved' });
       setAccounts(accounts => accounts.map(acc =>
         acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
       ));
@@ -109,7 +109,7 @@ const AdminAccounts = () => {
 
   const handleHideDoctor = async (doctorId) => {
     try {
-      await api.put(`/admin/doctors/${doctorId}/hide`);
+      await api.patch(`/admin/doctors/${doctorId}`, { status: 'hidden' });
       setAccounts(accounts => accounts.map(acc =>
         acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'hidden' } : acc
       ));
@@ -122,7 +122,7 @@ const AdminAccounts = () => {
 
   const handleUnhideDoctor = async (doctorId) => {
     try {
-      await api.put(`/admin/doctors/${doctorId}/unhide`);
+      await api.patch(`/admin/doctors/${doctorId}`, { status: 'approved' });
       setAccounts(accounts => accounts.map(acc =>
         acc.role === 'doctor' && acc.id === doctorId ? { ...acc, status: 'approved' } : acc
       ));
@@ -141,7 +141,7 @@ const AdminAccounts = () => {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await api.delete(`/admin/accounts/${deleteTarget.id}`);
+      await api.delete(`/admin/users/${deleteTarget.id}`);
       setAccounts(accounts => accounts.filter(acc => !(acc.role === deleteTarget.role && acc.id === deleteTarget.id)));
       toast.success('Account deleted successfully');
     } catch (error) {
@@ -179,7 +179,7 @@ const AdminAccounts = () => {
     }
 
     try {
-      await api.post('/admin/accounts/bulk-action', {
+      await api.post('/admin/users/bulk-action', {
         action,
         user_ids: selectedAccounts
       });
@@ -217,7 +217,7 @@ const AdminAccounts = () => {
         updateData.password = password;
       }
 
-      await api.put(`/admin/accounts/${editUser.id}`, updateData);
+      await api.put(`/admin/users/${editUser.id}`, updateData);
       toast.success('User updated successfully');
       setShowEditModal(false);
       setEditUser(null);
@@ -231,7 +231,7 @@ const AdminAccounts = () => {
   // Handle create user
   const handleCreateUser = async (userData) => {
     try {
-      await api.post('/admin/accounts', userData);
+      await api.post('/admin/users', userData);
       toast.success('User created successfully');
       setShowCreateModal(false);
       fetchAccounts();

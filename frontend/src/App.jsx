@@ -52,8 +52,8 @@ const App = () => {
           
           <Route path='/admin/*' element={<AdminSidebar />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="accounts" element={<AdminAccounts />} />
-            <Route path="accounts/new" element={<AdminAccountCreate />} />
+            <Route path="users" element={<AdminAccounts />} />
+            <Route path="users/new" element={<AdminAccountCreate />} />
             <Route path="appointments" element={<AdminAppointments />} />
             <Route path="assistants" element={<AdminAssistants />} />
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Admin page not found</div>} />

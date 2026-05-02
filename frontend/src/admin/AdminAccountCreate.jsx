@@ -94,7 +94,7 @@ const AdminAccountCreate = () => {
     setSuccess('');
     try {
       let payload = { ...form, type };
-      let url = '/admin/accounts';
+      let url = '/admin/users';
 
       if (type === 'assistant') {
         payload = {
@@ -109,7 +109,7 @@ const AdminAccountCreate = () => {
 
       await api.post(url, payload);
       setSuccess('Account created successfully!');
-      setTimeout(() => navigate('/admin/accounts'), 1200);
+      setTimeout(() => navigate('/admin/users'), 1200);
     } catch (err) {
       // Show backend error message if available
       setError(err.response?.data?.message || 'Error creating account');

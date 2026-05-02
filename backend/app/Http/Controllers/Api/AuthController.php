@@ -23,6 +23,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
             'role' => 'in:patient,doctor,admin,assistant',
+            'doctor_id' => 'nullable|exists:users,id',
         ]);
 
         $user = User::create([
@@ -33,6 +34,7 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'role' => $request->role ?? 'patient',
             'status' => 'active',
+            'doctor_id' => $request->doctor_id,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;

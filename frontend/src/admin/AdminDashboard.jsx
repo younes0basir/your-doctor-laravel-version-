@@ -77,7 +77,7 @@ const AdminDashboard = () => {
         console.log('Stats response:', statsResponse.data);
         
         // Fetch accounts
-        const accountsResponse = await api.get('/admin/accounts');
+        const accountsResponse = await api.get('/admin/users');
         console.log('Accounts response:', accountsResponse.data);
         
         // Fetch appointments

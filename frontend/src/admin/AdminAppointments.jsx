@@ -188,24 +188,15 @@ const AdminAppointments = () => {
     }
   };
 
-  // Update payment status handler
+      // Update payment status handler
   const handlePaymentStatusChange = async (appointment, newStatus) => {
     setPaymentStatusLoading(prev => ({ ...prev, [appointment.id]: true }));
     try {
-      // The api instance already includes the token from localStorage
-      // Try admin endpoint first, fallback to general endpoint
-      try {
-        await api.put(
-          `/admin/appointments/${appointment.id}/payment-status`,
-          { payment_status: newStatus }
-        );
-      } catch (err) {
-        // If admin endpoint fails (404 or 403), fallback to general endpoint
-        await api.put(
-          `/appointments/${appointment.id}/payment-status`,
-          { payment_status: newStatus }
-        );
-      }
+      // Use the general appointment update endpoint with PATCH
+      await api.patch(
+        `/admin/appointments/${appointment.id}`,
+        { payment_status: newStatus }
+      );
 
       setAppointments(appts =>
         appts.map(a =>

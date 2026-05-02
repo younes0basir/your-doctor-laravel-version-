@@ -78,30 +78,19 @@ const AssistantAppointments = () => {
         setLoading(true);
         setError(null);
         
-        const profileRes = await api.get('/user', {
-          
-        });
+        const profileRes = await api.get('/user');
+        const user = profileRes.data?.user || profileRes.data;
+        const doctorId = user?.doctor_id;
         
-        const doctorId = profileRes.data?.doctor_id;
-        if (!doctorId) throw new Error('No doctor assigned');
-        
-        const res = await api.get(`/doctors/${doctorId}/appointments`);
-
-        let appointmentsWithEmail = res.data;
-        if (appointmentsWithEmail.length > 0 && !appointmentsWithEmail[0].email) {
-          const patientsRes = await api.get('/admin/patients');
-          const patientsMap = {};
-          (patientsRes.data || []).forEach(p => {
-            patientsMap[p.id] = p.email;
-          });
-          appointmentsWithEmail = appointmentsWithEmail.map(appt => ({
-            ...appt,
-            email: patientsMap[appt.patient_id] || ''
-          }));
+        if (!doctorId) {
+          setError('No doctor assigned to your account. Please contact your administrator.');
+          setLoading(false);
+          return;
         }
-
-        setAppointments(appointmentsWithEmail || []);
-        setFilteredAppointments(appointmentsWithEmail || []);
+        
+        const res = await api.get(`/appointments/doctor/${doctorId}`);
+        setAppointments(res.data || []);
+        setFilteredAppointments(res.data || []);
       } catch (err) {
         setError(err.message || 'Failed to fetch appointments');
         setAppointments([]);
@@ -285,7 +274,7 @@ const AssistantAppointments = () => {
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await api.get(`/doctors/${doctorId}/appointments`);
+      const res = await api.get(`/appointments/doctor/${doctorId}`);
       setAppointments(res.data || []);
     } catch (err) {
       setError(err.message || 'Failed to create appointment');
@@ -337,7 +326,7 @@ const AssistantAppointments = () => {
       setEditForm({ id: null, appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await api.get(`/doctors/${doctorId}/appointments`);
+      const res = await api.get(`/appointments/doctor/${doctorId}`);
       setAppointments(res.data || []);
       setFilteredAppointments(res.data || []);
     } catch (err) {

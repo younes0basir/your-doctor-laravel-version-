@@ -132,8 +132,12 @@ class AppointmentController extends Controller
      */
     public function doctorAppointments(string $doctorId)
     {
+        // Handle User ID passed instead of Doctor Profile ID (common for assistant-side calls)
+        $doctorProfile = \App\Models\Doctor::where('user_id', $doctorId)->first();
+        $realDoctorId = $doctorProfile ? $doctorProfile->id : $doctorId;
+
         $appointments = Appointment::with(['patient', 'doctor.user'])
-            ->where('doctor_id', $doctorId)
+            ->where('doctor_id', $realDoctorId)
             ->orderBy('appointment_date', 'desc')
             ->get();
 
@@ -178,10 +182,14 @@ class AppointmentController extends Controller
      */
     public function todayQueue(Request $request, string $doctorId)
     {
+        // Handle User ID passed instead of Doctor Profile ID
+        $doctorProfile = \App\Models\Doctor::where('user_id', $doctorId)->first();
+        $realDoctorId = $doctorProfile ? $doctorProfile->id : $doctorId;
+
         // SQLite doesn't have FIELD(), so we order by queue_status directly or handle it in collection
         // Usually, we just want 'in_consultation' at the top, then 'waiting' ordered by arrival_time
         $appointments = Appointment::with(['patient', 'doctor.user'])
-            ->where('doctor_id', $doctorId)
+            ->where('doctor_id', $realDoctorId)
             ->whereDate('appointment_date', now()->toDateString())
             ->whereNotNull('queue_status')
             ->whereIn('queue_status', ['waiting', 'in_consultation'])
@@ -194,5 +202,59 @@ class AppointmentController extends Controller
         })->values();
 
         return response()->json($sorted);
+    }
+
+    /**
+     * Get statistics for assistant dashboard.
+     */
+    public function assistantStats(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'assistant' || !$user->doctor_id) {
+            return response()->json(['error' => 'Unauthorized or no doctor assigned'], 403);
+        }
+
+        // Get doctor profile ID from user ID
+        $doctorProfile = \App\Models\Doctor::where('user_id', $user->doctor_id)->first();
+        if (!$doctorProfile) {
+            return response()->json(['error' => 'Doctor profile not found'], 404);
+        }
+        $doctorProfileId = $doctorProfile->id;
+
+        $todayAppointments = Appointment::where('doctor_id', $doctorProfileId)
+            ->whereDate('appointment_date', now()->toDateString())
+            ->count();
+
+        $totalPatients = Appointment::where('doctor_id', $doctorProfileId)
+            ->distinct('patient_id')
+            ->count('patient_id');
+
+        $pendingAppointments = Appointment::where('doctor_id', $doctorProfileId)
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json([
+            'appointments' => $todayAppointments,
+            'patients' => $totalPatients,
+            'pending' => $pendingAppointments,
+        ]);
+    }
+
+    /**
+     * Update payment status of an appointment.
+     */
+    public function updatePaymentStatus(Request $request, string $id)
+    {
+        $request->validate([
+            'payment_status' => 'required|in:pending,paid,refunded,failed',
+        ]);
+
+        $appointment = Appointment::findOrFail($id);
+        $appointment->update(['payment_status' => $request->payment_status]);
+
+        return response()->json([
+            'message' => 'Payment status updated successfully',
+            'appointment' => $appointment,
+        ]);
     }
 }

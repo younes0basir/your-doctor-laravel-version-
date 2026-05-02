@@ -169,6 +169,7 @@ class AdminController extends Controller
             'role' => 'required|in:admin,patient,doctor,assistant',
             'phone' => 'nullable|string|max:20',
             'status' => 'nullable|in:active,inactive,pending,approved,hidden',
+            'doctor_id' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -183,6 +184,7 @@ class AdminController extends Controller
             'role' => $request->role,
             'phone' => $request->phone,
             'status' => $request->status ?? 'active',
+            'doctor_id' => $request->doctor_id,
         ]);
 
         // If creating a doctor, create doctor profile
@@ -264,33 +266,25 @@ class AdminController extends Controller
     }
 
     /**
-     * Approve a doctor.
+     * Update doctor status.
      */
-    public function approveDoctor($id)
+    public function updateDoctorStatus(Request $request, $id)
     {
-        $doctor = Doctor::where('user_id', $id)->firstOrFail();
-        $doctor->update(['status' => 'approved']);
-
-        // Also update user status
-        $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
-
-        return response()->json([
-            'message' => 'Doctor approved successfully',
-            'doctor' => $doctor->fresh()
+        $request->validate([
+            'status' => 'required|in:pending,approved,hidden,rejected',
         ]);
-    }
 
-    /**
-     * Reject/hide a doctor.
-     */
-    public function hideDoctor($id)
-    {
         $doctor = Doctor::where('user_id', $id)->firstOrFail();
-        $doctor->update(['status' => 'hidden']);
+        $doctor->update(['status' => $request->status]);
+
+        // If approved, also update user status
+        if ($request->status === 'approved') {
+            $user = User::findOrFail($id);
+            $user->update(['status' => 'active']);
+        }
 
         return response()->json([
-            'message' => 'Doctor hidden successfully',
+            'message' => 'Doctor status updated successfully',
             'doctor' => $doctor->fresh()
         ]);
     }

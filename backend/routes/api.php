@@ -53,13 +53,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Appointments
     Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'doctorAppointments']);
     Route::get('/appointments/queue/{doctorId}', [AppointmentController::class, 'todayQueue']);
+    Route::get('/assistants/stats', [AppointmentController::class, 'assistantStats']);
     Route::apiResource('appointments', AppointmentController::class);
     Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
     Route::patch('/appointments/{id}/queue', [AppointmentController::class, 'updateQueueStatus']);
+    Route::patch('/appointments/{id}/payment-status', [AppointmentController::class, 'updatePaymentStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
 });
 
 // Parameterized public routes (placed after static routes to avoid collisions)
+Route::get('/doctors/by-user/{userId}', [DoctorController::class, 'byUser']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
 // Admin routes
@@ -71,19 +74,18 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/activity-logs', [\App\Http\Controllers\Api\AdminController::class, 'getActivityLogs']);
     
     // User Management (Full CRUD)
-    Route::get('/accounts', [\App\Http\Controllers\Api\AdminController::class, 'accounts']);
-    Route::post('/accounts', [\App\Http\Controllers\Api\AdminController::class, 'createUser']);
-    Route::put('/accounts/{id}', [\App\Http\Controllers\Api\AdminController::class, 'updateUser']);
-    Route::delete('/accounts/{id}', [\App\Http\Controllers\Api\AdminController::class, 'deleteUser']);
-    Route::post('/accounts/bulk-action', [\App\Http\Controllers\Api\AdminController::class, 'bulkUserAction']);
+    Route::get('/users', [\App\Http\Controllers\Api\AdminController::class, 'accounts']);
+    Route::post('/users', [\App\Http\Controllers\Api\AdminController::class, 'createUser']);
+    Route::put('/users/{id}', [\App\Http\Controllers\Api\AdminController::class, 'updateUser']);
+    Route::delete('/users/{id}', [\App\Http\Controllers\Api\AdminController::class, 'deleteUser']);
+    Route::post('/users/bulk-action', [\App\Http\Controllers\Api\AdminController::class, 'bulkUserAction']);
     
     // Doctor Management
-    Route::put('/doctors/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveDoctor']);
-    Route::put('/doctors/{id}/hide', [\App\Http\Controllers\Api\AdminController::class, 'hideDoctor']);
+    Route::patch('/doctors/{id}', [\App\Http\Controllers\Api\AdminController::class, 'updateDoctorStatus']);
     
     // Appointment Management
     Route::get('/appointments', [\App\Http\Controllers\Api\AdminController::class, 'appointments']);
-    Route::put('/appointments/{id}/status', [\App\Http\Controllers\Api\AdminController::class, 'updateAppointmentStatus']);
+    Route::patch('/appointments/{id}', [\App\Http\Controllers\Api\AdminController::class, 'updateAppointmentStatus']);
     Route::delete('/appointments/{id}', [\App\Http\Controllers\Api\AdminController::class, 'deleteAppointment']);
 });
 

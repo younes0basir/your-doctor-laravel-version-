@@ -46,7 +46,7 @@ const AdminAssistants = () => {
     setLoading(true);
     try {
       // Use the admin accounts endpoint with role filtering
-      const res = await api.get('/admin/accounts?role=assistant');
+      const res = await api.get('/admin/users?role=assistant');
       setAssistants(res.data?.data || res.data || []);
     } catch (err) {
       console.error('Error fetching assistants:', err);
@@ -89,7 +89,7 @@ const AdminAssistants = () => {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await api.delete(`/admin/accounts/${deleteId}`);
+      await api.delete(`/admin/users/${deleteId}`);
       setAssistants(assistants => assistants.filter(a => a.id !== deleteId));
       toast.success('Assistant deleted successfully');
     } catch {
@@ -119,7 +119,7 @@ const AdminAssistants = () => {
     e.preventDefault();
     try {
       await api.put(
-        `/admin/accounts/${editId}`,
+        `/admin/users/${editId}`,
         editData
       );
       setAssistants(assistants =>
@@ -139,7 +139,7 @@ const AdminAssistants = () => {
     e.preventDefault();
     try {
       const res = await api.post(
-        '/admin/accounts',
+        '/admin/users',
         { 
           email: editData.email,
           first_name: editData.firstName,

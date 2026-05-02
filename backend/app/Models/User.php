@@ -28,6 +28,7 @@ class User extends Authenticatable
         'date_of_birth',
         'gender',
         'address',
+        'doctor_id',
     ];
 
     /**
@@ -80,6 +81,14 @@ class User extends Authenticatable
     public function isPatient(): bool
     {
         return $this->role === 'patient';
+    }
+
+    /**
+     * Get the doctor this user (assistant) belongs to.
+     */
+    public function assignedDoctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 
     /**

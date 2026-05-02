@@ -182,6 +182,23 @@ class DoctorController extends Controller
     }
 
     /**
+     * Get doctor profile by user ID.
+     */
+    public function byUser(string $userId)
+    {
+        $doctor = Doctor::with('user', 'reviews.patient')->where('user_id', $userId)->first();
+        
+        if (!$doctor) {
+            return response()->json(['message' => 'Doctor profile not found'], 404);
+        }
+
+        return response()->json([
+            'doctor' => $doctor,
+            'average_rating' => $doctor->averageRating(),
+        ]);
+    }
+
+    /**
      * Get statistics for the authenticated doctor.
      */
     public function stats(Request $request)

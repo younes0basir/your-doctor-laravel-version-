@@ -67,15 +67,26 @@ const AssistantDashboard = () => {
         if (!token) throw new Error('Authentication required');
 
         // Get assistant profile
-        const res = await api.get('/user', {
-          
-        });
-        setAssistant(res.data);
+        const res = await api.get('/user');
+        const user = res.data?.user || res.data;
+        setAssistant(user);
 
         // Get doctor info if assigned
-        if (res.data?.doctor_id) {
-          const docRes = await api.get(`/doctors/${res.data.doctor_id}`);
-          setDoctor(docRes.data);
+        const doctorId = user?.doctor_id;
+        if (doctorId) {
+          const docRes = await api.get(`/doctors/by-user/${doctorId}`);
+          const doctorData = docRes.data?.doctor || docRes.data;
+          
+          // Map to match the template expectations if needed
+          const formattedDoctor = {
+            ...doctorData,
+            firstName: doctorData?.user?.first_name || doctorData?.firstName,
+            lastName: doctorData?.user?.last_name || doctorData?.lastName,
+            email: doctorData?.user?.email || doctorData?.email,
+            phoneNumber: doctorData?.user?.phone || doctorData?.phoneNumber
+          };
+          
+          setDoctor(formattedDoctor);
           
           // Try to get stats, but don't fail if endpoint doesn't exist
           try {
@@ -129,9 +140,9 @@ const AssistantDashboard = () => {
     setCreateLoading(true);
     setCreateFormError(null);
     try {
-      const token = localStorage.getItem('assistantToken');
-      const doctorId = assistant?.doctor_id;
-      if (!token) throw new Error('No authentication token found');
+      const profileRes = await api.get('/user');
+        
+      const doctorId = profileRes.data?.user?.doctor_id || profileRes.data?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
       if (!createForm.patientId) throw new Error('Please select a patient');
 

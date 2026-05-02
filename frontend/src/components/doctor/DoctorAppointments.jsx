@@ -124,11 +124,7 @@ const DoctorAppointments = () => {
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      const endpoint = newStatus === 'confirmed' 
-        ? `${BASE_URL}/appointments/${appointmentId}/confirm`
-        : `${BASE_URL}/appointments/${appointmentId}/cancel`;
-
-      await api.put(endpoint, {});
+      await api.patch(`/appointments/${appointmentId}/status`, { status: newStatus });
 
       setAppointments(prev => prev.map(app => 
         app.id === appointmentId ? { ...app, status: newStatus } : app
@@ -147,10 +143,10 @@ const DoctorAppointments = () => {
   const handlePaymentStatusChange = async (appointmentId, currentStatus) => {
     try {
       setUpdatingPayment(appointmentId);
-      // Toggle payment status: if 'paid' -> 'unpaid', else 'paid'
-      const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
-      await api.put(
-        `${BASE_URL}/appointments/${appointmentId}/payment-status`,
+      // Toggle payment status: if 'paid' -> 'pending', else 'paid'
+      const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+      await api.patch(
+        `/appointments/${appointmentId}/payment-status`,
         { payment_status: newStatus }
       );
       setAppointments(prev =>

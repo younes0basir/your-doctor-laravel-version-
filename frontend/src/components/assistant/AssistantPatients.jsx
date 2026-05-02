@@ -60,12 +60,19 @@ const AssistantPatients = () => {
       setFilteredPatients(patients);
     } else {
       const lowercasedSearch = searchTerm.toLowerCase();
-      const filtered = patients.filter(patient => 
-        (patient.firstName && patient.firstName.toLowerCase().includes(lowercasedSearch)) ||
-        (patient.lastName && patient.lastName.toLowerCase().includes(lowercasedSearch)) ||
-        (patient.email && patient.email.toLowerCase().includes(lowercasedSearch)) ||
-        (patient.phoneNumber && patient.phoneNumber.includes(searchTerm))
-      );
+      const filtered = patients.filter(patient => {
+        const firstName = patient.firstName || patient.first_name || '';
+        const lastName = patient.lastName || patient.last_name || '';
+        const email = patient.email || '';
+        const phone = patient.phoneNumber || patient.phone || '';
+        
+        return (
+          firstName.toLowerCase().includes(lowercasedSearch) ||
+          lastName.toLowerCase().includes(lowercasedSearch) ||
+          email.toLowerCase().includes(lowercasedSearch) ||
+          phone.includes(searchTerm)
+        );
+      });
       setFilteredPatients(filtered);
     }
   }, [searchTerm, patients]);
@@ -172,7 +179,7 @@ const AssistantPatients = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {patient.firstName} {patient.lastName}
+                                {patient.firstName || patient.first_name} {patient.lastName || patient.last_name}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {patient.gender || 'Not specified'}
@@ -187,7 +194,7 @@ const AssistantPatients = () => {
                           </div>
                           <div className="text-sm text-gray-500 flex items-center mt-1">
                             <FiPhone className="mr-2 text-gray-400" />
-                            {patient.phoneNumber || 'Not provided'}
+                            {patient.phoneNumber || patient.phone || 'Not provided'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

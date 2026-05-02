@@ -21,13 +21,18 @@ const AssistantRegister = ({ onRegistered }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const doctorToken = localStorage.getItem('doctorToken');
+      const doctorData = JSON.parse(localStorage.getItem('doctor'));
+      // The 'doctor' object in localStorage might be the profile or the user
+      // We need the User ID for the assistant's doctor_id column
+      const doctorId = doctorData?.user_id || doctorData?.id;
+
       await api.post('/register', {
         ...form,
         first_name: form.firstName,
         last_name: form.lastName,
         password_confirmation: form.password_confirmation,
-        role: 'assistant'
+        role: 'assistant',
+        doctor_id: doctorId
       });
       toast.success('Assistant registered successfully!');
       if (onRegistered) {

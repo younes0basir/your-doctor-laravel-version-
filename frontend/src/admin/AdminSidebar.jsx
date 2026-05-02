@@ -29,8 +29,8 @@ const AdminSidebar = () => {
       icon: <FiActivity className="w-5 h-5" />,
     },
     {
-      path: 'accounts',
-      name: 'Manage Accounts',
+      path: 'users',
+      name: 'Manage Users',
       icon: <FiUsers className="w-5 h-5" />,
     },
     {
@@ -95,7 +95,7 @@ const AdminSidebar = () => {
           {/* Quick Action */}
           <button 
             className="mx-2 mt-6 flex items-center justify-center px-4 py-2 bg-white/90 text-[#ff5a5f] rounded-lg shadow-sm hover:bg-white transition-colors text-sm font-medium"
-            onClick={() => navigate('/admin/accounts/new')}
+            onClick={() => navigate('/admin/users/new')}
           >
             <FiUserPlus className="mr-2" />
             Create Account
