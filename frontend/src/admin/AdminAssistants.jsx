@@ -28,6 +28,7 @@ const AdminAssistants = () => {
     email: '', 
     firstName: '', 
     lastName: '', 
+    password: '',
     doctor_id: '' 
   });
   const [showEdit, setShowEdit] = useState(false);
@@ -139,9 +140,16 @@ const AdminAssistants = () => {
     try {
       const res = await api.post(
         '/admin/accounts',
-        { ...editData, role: 'assistant' }
+        { 
+          email: editData.email,
+          first_name: editData.firstName,
+          last_name: editData.lastName,
+          password: editData.password,
+          role: 'assistant',
+          doctor_id: editData.doctor_id
+        }
       );
-      setAssistants([...assistants, res.data]);
+      setAssistants([...assistants, res.data.user || res.data]);
       toast.success('Assistant created successfully');
       setShowCreate(false);
       setEditData({ email: '', firstName: '', lastName: '', doctor_id: '' });
@@ -414,6 +422,18 @@ const AdminAssistants = () => {
                   onChange={handleEditChange}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  value={editData.password}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  placeholder="Min 8 characters"
                 />
               </div>
             </div>

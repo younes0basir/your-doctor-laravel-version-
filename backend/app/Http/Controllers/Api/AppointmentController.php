@@ -139,4 +139,60 @@ class AppointmentController extends Controller
 
         return response()->json($appointments);
     }
+
+    /**
+     * Update queue status (waiting room).
+     */
+    public function updateQueueStatus(Request $request, string $id)
+    {
+        $request->validate([
+            'queue_status' => 'required|in:waiting,in_consultation,finished',
+        ]);
+
+        $appointment = Appointment::findOrFail($id);
+        
+        $updateData = ['queue_status' => $request->queue_status];
+        
+        if ($request->queue_status === 'waiting' && !$appointment->arrival_time) {
+            $updateData['arrival_time'] = now();
+            // Automatically confirm if they just showed up pending
+            if ($appointment->status === 'pending') {
+                $updateData['status'] = 'confirmed'; 
+            }
+        } elseif ($request->queue_status === 'in_consultation' && !$appointment->consultation_start_time) {
+            $updateData['consultation_start_time'] = now();
+        } elseif ($request->queue_status === 'finished') {
+            $updateData['status'] = 'completed';
+        }
+
+        $appointment->update($updateData);
+
+        return response()->json([
+            'message' => 'Queue status updated successfully',
+            'appointment' => $appointment->fresh()->load(['patient', 'doctor.user']),
+        ]);
+    }
+
+    /**
+     * Get today's queue for a doctor.
+     */
+    public function todayQueue(Request $request, string $doctorId)
+    {
+        // SQLite doesn't have FIELD(), so we order by queue_status directly or handle it in collection
+        // Usually, we just want 'in_consultation' at the top, then 'waiting' ordered by arrival_time
+        $appointments = Appointment::with(['patient', 'doctor.user'])
+            ->where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', now()->toDateString())
+            ->whereNotNull('queue_status')
+            ->whereIn('queue_status', ['waiting', 'in_consultation'])
+            ->get();
+            
+        // Sort: in_consultation first, then waiting ordered by arrival_time
+        $sorted = $appointments->sortBy(function($app) {
+            $rank = $app->queue_status === 'in_consultation' ? 1 : 2;
+            return $rank . '-' . $app->arrival_time;
+        })->values();
+
+        return response()->json($sorted);
+    }
 }

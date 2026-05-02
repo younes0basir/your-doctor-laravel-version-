@@ -23,6 +23,7 @@ import DoctorAppointments from './components/doctor/DoctorAppointments';
 import DoctorPatients from './components/doctor/DoctorPatients';
 import DoctorAssistants from './components/doctor/DoctorAssistants';
 import DoctorSettings from './components/doctor/DoctorSettings';
+import DoctorOfficeQueue from './components/doctor/DoctorOfficeQueue';
 import AssistantDashboard from './components/assistant/AssistantDashboard';
 import AssistantAppointments from './components/assistant/AssistantAppointments';
 import AssistantPatients from './components/assistant/AssistantPatients';
@@ -32,12 +33,13 @@ const App = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const isDoctorRoute = location.pathname.startsWith('/doctor/');
+  const isAssistantRoute = location.pathname.startsWith('/assistant/');
 
   return (
     <div className='flex flex-col min-h-screen'>
       <ToastContainer />
-      {/* Hide NavBar and Footer on admin/doctor pages */}
-      {!isAdminRoute && !isDoctorRoute && <Navbar />}
+      {/* Hide NavBar and Footer on admin/doctor/assistant pages */}
+      {!isAdminRoute && !isDoctorRoute && !isAssistantRoute && <Navbar />}
       <div className='flex-grow'>
         <Routes>
           <Route path='/' element={<Home />} />
@@ -47,38 +49,39 @@ const App = () => {
           <Route path='/appointment/:doctorId' element={<Appointment />} />
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
+          
           <Route path='/admin/*' element={<AdminSidebar />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="accounts" element={<AdminAccounts />} />
             <Route path="accounts/new" element={<AdminAccountCreate />} />
             <Route path="appointments" element={<AdminAppointments />} />
             <Route path="assistants" element={<AdminAssistants />} />
-            {/* fallback for unknown admin routes */}
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Admin page not found</div>} />
             <Route index element={<AdminDashboard />} />
           </Route>
+
           <Route path='/doctor/*'>
             <Route path="dashboard" element={<DoctorDashboard />} />
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="patients" element={<DoctorPatients />} />
             <Route path="assistants" element={<DoctorAssistants />} />
             <Route path="settings" element={<DoctorSettings />} />
-            {/* fallback for unknown doctor routes */}
+            <Route path="office-queue" element={<DoctorOfficeQueue />} />
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Doctor page not found</div>} />
             <Route index element={<DoctorDashboard />} />
           </Route>
+
           <Route path='/assistant/*'>
             <Route path="dashboard" element={<AssistantDashboard />} />
             <Route path="appointments" element={<AssistantAppointments />} />
             <Route path="patients" element={<AssistantPatients />} />
             <Route path="manage-queue" element={<AssistantManageQueue />} />
-            {/* fallback for unknown assistant routes */}
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Assistant page not found</div>} />
             <Route index element={<AssistantDashboard />} />
           </Route>
         </Routes>
       </div>
-      {!isAdminRoute && !isDoctorRoute && <Footer />}
+      {!isAdminRoute && !isDoctorRoute && !isAssistantRoute && <Footer />}
     </div>
   )
 }

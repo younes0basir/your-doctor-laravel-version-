@@ -22,7 +22,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'role' => 'in:patient,doctor,admin',
+            'role' => 'in:patient,doctor,admin,assistant',
         ]);
 
         $user = User::create([

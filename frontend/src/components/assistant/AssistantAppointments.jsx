@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import api from '../../requests';
 import { 
   FiCalendar, 
@@ -185,9 +186,27 @@ const AssistantAppointments = () => {
         )
       );
     } catch (error) {
-      alert('Failed to update appointment status');
+      toast.error('Failed to update appointment status');
     }
   };
+
+  const handleQueueStatusChange = async (appointmentId, newQueueStatus) => {
+    try {
+      const res = await api.patch(
+        `/appointments/${appointmentId}/queue`,
+        { queue_status: newQueueStatus }
+      );
+      setAppointments(prev =>
+        prev.map(app =>
+          app.id === appointmentId ? { ...app, queue_status: newQueueStatus, status: res.data.appointment.status } : app
+        )
+      );
+      toast.success('Patient marked as arrived!');
+    } catch (error) {
+      toast.error('Failed to update queue status');
+    }
+  };
+
 
   const handlePaymentStatusChange = async (appointment, newStatus) => {
     setPaymentStatusLoading(prev => ({ ...prev, [appointment.id]: true }));
@@ -921,9 +940,21 @@ const AssistantAppointments = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              {getStatusIcon(appt.status)}
-                              <span className="text-sm text-gray-900 capitalize">{appt.status || 'Pending'}</span>
+                            <div className="flex flex-col">
+                              <div className="flex items-center">
+                                {getStatusIcon(appt.status)}
+                                <span className="text-sm text-gray-900 capitalize">{appt.status || 'Pending'}</span>
+                              </div>
+                              {appt.queue_status === 'waiting' && (
+                                <span className="mt-1 w-max inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  In Waiting Room
+                                </span>
+                              )}
+                              {appt.queue_status === 'in_consultation' && (
+                                <span className="mt-1 w-max inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                  In Consultation
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1023,6 +1054,18 @@ const AssistantAppointments = () => {
                                           <FiXCircle className="mr-1" /> Cancel
                                         </motion.button>
                                       </>
+                                    )}
+
+                                    {(!appt.queue_status && (appt.status === 'confirmed' || appt.status === 'pending') && new Date(appt.appointment_date).toDateString() === new Date().toDateString()) && (
+                                      <motion.button
+                                        className="px-3 py-1 border border-blue-600 rounded-md text-sm text-white bg-blue-600 hover:bg-blue-700 flex items-center"
+                                        title="Mark as Arrived"
+                                        onClick={() => handleQueueStatusChange(appt.id, 'waiting')}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                      >
+                                        <FiCheckCircle className="mr-1" /> Mark Arrived
+                                      </motion.button>
                                     )}
                                   </div>
                                 </div>

@@ -1,304 +1,226 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../requests';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
-import DoctorSidebar from './DoctorSidebar';
 import { 
-  FiClock,
-  FiUser,
-  FiCalendar,
-  FiPlay,
-  FiEye,
-  FiCheckCircle,
+  FiClock, 
+  FiUser, 
+  FiCheckCircle, 
+  FiPlayCircle,
   FiLoader,
-  FiAlertCircle,
-  FiRefreshCw,
-  FiSearch
+  FiAlertCircle
 } from 'react-icons/fi';
-
-const BASE_URL = '';
+import { motion, AnimatePresence } from 'framer-motion';
+import DoctorSidebar from './DoctorSidebar';
 
 const DoctorOfficeQueue = () => {
-  const [queuedAppointments, setQueuedAppointments] = useState([]);
-  const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const navigate = useNavigate();
+  const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
+  const [actionLoading, setActionLoading] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Update current time every minute for the wait timers
   useEffect(() => {
-    fetchQueuedAppointments();
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const filtered = queuedAppointments.filter(appointment => {
-      if (!appointment) return false;
-      
-      const searchLower = searchTerm.toLowerCase();
-      const firstName = appointment.firstName || '';
-      const lastName = appointment.lastName || '';
-      const patientId = appointment.patientId || '';
-      const status = appointment.status || '';
-      const appointmentDate = appointment.appointment_date ? new Date(appointment.appointment_date) : null;
+  const fetchQueue = async () => {
+    const doctorData = JSON.parse(localStorage.getItem('doctor'));
 
-      return (
-        firstName.toLowerCase().includes(searchLower) ||
-        lastName.toLowerCase().includes(searchLower) ||
-        patientId.toLowerCase().includes(searchLower) ||
-        status.toLowerCase().includes(searchLower) ||
-        (appointmentDate && (
-          appointmentDate.toLocaleDateString().toLowerCase().includes(searchLower) ||
-          appointmentDate.toLocaleTimeString().toLowerCase().includes(searchLower)
-        ))
-      );
-    });
-    setFilteredAppointments(filtered);
-  }, [searchTerm, queuedAppointments]);
-
-  const fetchQueuedAppointments = async () => {
-    try {
-      setRefreshing(true);
-      setError(null);
-      const token = localStorage.getItem('token');
-      const doctorData = JSON.parse(localStorage.getItem('doctor'));
-      
-      if (!doctorData?.id) {
-        toast.error('Doctor information not found');
-        navigate('/login');
-        return;
-      }
-
-      const response = await api.get(`${BASE_URL}/appointments/queue/${doctorData.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setQueuedAppointments(response.data || []);
-      setFilteredAppointments(response.data || []);
-    } catch (error) {
-      console.error('Error fetching queue:', error);
-      setError('Failed to fetch queued appointments');
-      toast.error('Failed to load queue');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleStartAppointment = async (appointmentId) => {
-    try {
-      await api.put(`${BASE_URL}/appointments/${appointmentId}/start`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      toast.success('Appointment started successfully');
-      fetchQueuedAppointments();
-      navigate(`/doctor/appointment-live/${appointmentId}`);
-    } catch (error) {
-      toast.error('Failed to start appointment');
-    }
-  };
-
-  const handleEndAppointment = async (appointmentId) => {
-    if (!window.confirm('Are you sure you want to end this appointment?')) {
+    if (!doctorData) {
+      toast.error('Session expirée');
+      navigate('/login');
       return;
     }
 
     try {
-      await api.put(`${BASE_URL}/appointments/${appointmentId}/end`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      toast.success('Appointment completed successfully');
-      fetchQueuedAppointments();
-    } catch (error) {
-      toast.error('Failed to end appointment');
+      const res = await api.get(`/appointments/queue/${doctorData.id}`);
+      setQueue(res.data || []);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Impossible de charger la file d\'attente');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    if (!status) return null;
+  useEffect(() => {
+    fetchQueue();
+    // Poll every 15 seconds to automatically fetch new arrivals
+    const interval = setInterval(() => {
+      fetchQueue();
+    }, 15000);
     
-    const statusMap = {
-      'pending': { color: 'bg-yellow-100 text-yellow-800', icon: <FiClock className="mr-1" /> },
-      'confirmed': { color: 'bg-blue-100 text-blue-800', icon: <FiClock className="mr-1" /> },
-      'in_progress': { color: 'bg-green-100 text-green-800', icon: <FiPlay className="mr-1" /> },
-      'completed': { color: 'bg-gray-100 text-gray-800', icon: <FiCheckCircle className="mr-1" /> }
-    };
+    return () => clearInterval(interval);
+  }, []);
 
-    const { color, icon } = statusMap[status] || { color: 'bg-gray-100 text-gray-800', icon: null };
-    
-    return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${color}`}>
-        {icon}
-        {status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-      </span>
-    );
+  const handleQueueAction = async (appointmentId, newStatus) => {
+    setActionLoading(appointmentId);
+    try {
+      await api.patch(`/appointments/${appointmentId}/queue`, { queue_status: newStatus });
+      toast.success(newStatus === 'in_consultation' ? 'Consultation démarrée' : 'Consultation terminée');
+      fetchQueue(); // refresh immediately
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour du statut');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <DoctorSidebar />
-        <div className="flex-1 p-8">
-          <div className="flex justify-center items-center h-full">
-            <div className="flex flex-col items-center gap-4">
-              <FiLoader className="animate-spin h-12 w-12 text-[#ff5a5f]" />
-              <p className="text-lg text-gray-600">Loading queue...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getWaitTime = (arrivalTime) => {
+    if (!arrivalTime) return 'Inconnu';
+    const diff = Math.floor((currentTime - new Date(arrivalTime)) / 60000);
+    return diff < 1 ? 'Vient d\'arriver' : `${diff} min`;
+  };
+
+  const inConsultation = queue.filter(q => q.queue_status === 'in_consultation');
+  const waiting = queue.filter(q => q.queue_status === 'waiting');
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <DoctorSidebar />
-      <div className="flex-1 p-6 md:p-8 overflow-auto">
-        <div className="flex flex-col space-y-4 mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex min-h-screen bg-gray-50">
+      <DoctorSidebar activeTab="office-queue" />
+      <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Office Queue</h2>
-              <p className="text-gray-600 mt-1">
-                {filteredAppointments?.length || 0} appointment{filteredAppointments?.length !== 1 ? 's' : ''} found
-              </p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">File d'attente</h1>
+              <p className="text-gray-600 mt-1">Vue en direct de votre salle d'attente</p>
             </div>
-            <button
-              onClick={fetchQueuedAppointments}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <FiRefreshCw className={`${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
+            <div className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400" />
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 shadow-sm border border-red-100 flex items-center">
+              <FiAlertCircle className="mr-2" />
+              {error}
             </div>
-            <input
-              type="text"
-              placeholder="Search patients, time, or status..."
-              className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] focus:border-[#ff5a5f]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
+          )}
 
-        {error ? (
-          <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
-            <div className="flex items-center">
-              <FiAlertCircle className="h-6 w-6 text-red-500 mr-4" />
-              <div>
-                <h3 className="text-lg font-medium text-red-800">Error loading queue</h3>
-                <p className="mt-1 text-gray-600">
-                  {error}. Please try refreshing the page.
-                </p>
-              </div>
+          {loading && queue.length === 0 ? (
+            <div className="flex justify-center items-center py-12">
+              <FiLoader className="animate-spin h-8 w-8 text-[#ff5a5f]" />
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAppointments?.map((appointment, index) => (
-                    <tr key={appointment?.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium text-gray-900">{index + 1}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-[#ff5a5f]/10 rounded-full flex items-center justify-center">
-                            <FiUser className="text-[#ff5a5f] w-5 h-5" />
+          ) : (
+            <div className="space-y-6">
+              {/* Currently In Consultation */}
+              <div className="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden">
+                <div className="bg-green-50 px-6 py-4 border-b border-green-100 flex items-center">
+                  <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse mr-3"></div>
+                  <h2 className="text-lg font-semibold text-green-900">En Consultation</h2>
+                </div>
+                
+                <div className="p-6">
+                  {inConsultation.length > 0 ? (
+                    inConsultation.map(appt => (
+                      <div key={appt.id} className="flex flex-col sm:flex-row justify-between items-center bg-green-50 p-4 rounded-lg border border-green-100">
+                        <div className="flex items-center mb-4 sm:mb-0">
+                          <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center shadow-sm text-green-600">
+                            <FiUser className="h-6 w-6" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {appointment?.firstName || 'N/A'} {appointment?.lastName || ''}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {appointment?.patientId || 'N/A'}
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {appt.patient?.first_name || 'Inconnu'} {appt.patient?.last_name || ''}
+                            </h3>
+                            <div className="text-sm text-green-700 flex items-center mt-1">
+                              <FiClock className="mr-1" />
+                              Démarré à {appt.consultation_start_time ? new Date(appt.consultation_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Inconnu'}
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {appointment?.appointment_date ? new Date(appointment.appointment_date).toLocaleDateString() : 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {appointment?.appointment_date ? new Date(appointment.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(appointment?.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {appointment?.status === 'in_progress' ? (
-                          <div className="flex space-x-2 justify-end">
-                            <button
-                              onClick={() => navigate(`/doctor/appointment-live/${appointment.id}`)}
-                              className="flex items-center gap-1 px-4 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-                            >
-                              <FiEye />
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleEndAppointment(appointment.id)}
-                              className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              <FiCheckCircle />
-                              End
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleStartAppointment(appointment.id)}
-                            className="flex items-center gap-1 px-4 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-                            disabled={appointment?.status === 'completed'}
-                          >
-                            <FiPlay />
-                            Start
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredAppointments?.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center">
-                        <FiSearch className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-4 text-lg font-medium text-gray-900">
-                          {queuedAppointments?.length === 0 
-                            ? 'No appointments in queue' 
-                            : 'No matching appointments found'}
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                          {queuedAppointments?.length === 0
-                            ? 'Patients will appear here when they check in for their appointments.'
-                            : 'Try adjusting your search query.'}
-                        </p>
-                      </td>
-                    </tr>
+                        <button
+                          onClick={() => handleQueueAction(appt.id, 'finished')}
+                          disabled={actionLoading === appt.id}
+                          className="w-full sm:w-auto px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm font-medium flex items-center justify-center"
+                        >
+                          {actionLoading === appt.id ? <FiLoader className="animate-spin mr-2" /> : <FiCheckCircle className="mr-2" />}
+                          Terminer la consultation
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-gray-500 italic">
+                      Aucun patient en consultation actuellement.
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
+
+              {/* Waiting Room */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-gray-900">Salle d'attente</h2>
+                  <span className="bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-xs font-bold">
+                    {waiting.length} en attente
+                  </span>
+                </div>
+                
+                <div className="divide-y divide-gray-100">
+                  {waiting.length > 0 ? (
+                    <AnimatePresence>
+                      {waiting.map((appt, index) => (
+                        <motion.div 
+                          key={appt.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="p-6 hover:bg-gray-50 transition flex flex-col sm:flex-row justify-between items-center"
+                        >
+                          <div className="flex items-center w-full sm:w-auto mb-4 sm:mb-0">
+                            <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                              #{index + 1}
+                            </div>
+                            <div className="ml-4">
+                              <h3 className="text-md font-bold text-gray-900">
+                                {appt.patient?.first_name || 'Inconnu'} {appt.patient?.last_name || ''}
+                              </h3>
+                              <div className="flex items-center mt-1 space-x-4">
+                                <span className="text-sm text-gray-500 flex items-center">
+                                  <FiClock className="mr-1" />
+                                  Arrivé: {appt.arrival_time ? new Date(appt.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Inconnu'}
+                                </span>
+                                <span className={`text-sm font-medium ${parseInt(getWaitTime(appt.arrival_time)) > 30 ? 'text-red-500' : 'text-orange-500'}`}>
+                                  Attente: {getWaitTime(appt.arrival_time)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => handleQueueAction(appt.id, 'in_consultation')}
+                            disabled={actionLoading === appt.id || inConsultation.length > 0}
+                            className={`w-full sm:w-auto px-5 py-2 rounded-lg transition shadow-sm font-medium flex items-center justify-center ${
+                              inConsultation.length > 0 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-[#ff5a5f] text-white hover:bg-[#ff4248]'
+                            }`}
+                            title={inConsultation.length > 0 ? "Terminez la consultation actuelle d'abord" : "Appeler le patient"}
+                          >
+                            {actionLoading === appt.id ? <FiLoader className="animate-spin mr-2" /> : <FiPlayCircle className="mr-2" />}
+                            Appeler le patient
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  ) : (
+                    <div className="text-center py-12 px-4">
+                      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FiUser className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">La salle d'attente est vide</h3>
+                      <p className="text-gray-500">Aucun patient n'attend pour le moment.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

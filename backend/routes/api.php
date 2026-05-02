@@ -52,8 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Appointments
     Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'doctorAppointments']);
+    Route::get('/appointments/queue/{doctorId}', [AppointmentController::class, 'todayQueue']);
     Route::apiResource('appointments', AppointmentController::class);
     Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
+    Route::patch('/appointments/{id}/queue', [AppointmentController::class, 'updateQueueStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
 });
 
