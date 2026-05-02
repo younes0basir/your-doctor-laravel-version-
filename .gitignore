@@ -1,0 +1,40 @@
+# Monorepo Root .gitignore
+
+# Dependencies
+**/node_modules/
+**/vendor/
+
+# Environment
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+**/logs/
+**/*.log
+
+# Build artifacts
+**/dist/
+**/build/
+**/bootstrap/cache/*
+!**/bootstrap/cache/.gitkeep
+**/storage/framework/cache/data/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*
+**/storage/logs/*
+
+# Misc
+.phpunit.result.cache
+.serverless/
+.fusebox/
+.dynamodb/

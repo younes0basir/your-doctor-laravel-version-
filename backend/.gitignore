@@ -20,6 +20,12 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
+# Framework files
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+
 # IDE files
 /.idea
 /.vscode
