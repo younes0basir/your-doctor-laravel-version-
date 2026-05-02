@@ -31,7 +31,6 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Public routes - No authentication required
 Route::get('/doctors', [DoctorController::class, 'index']);
-Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 Route::get('/doctors/specialty/{specialty}', [DoctorController::class, 'bySpecialty']);
 
 // Protected routes
@@ -39,19 +38,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     
+    // Doctor specific protected routes
+    Route::get('/doctors/profile', [DoctorController::class, 'profile']);
+    Route::get('/doctors/stats', [DoctorController::class, 'stats']);
+    Route::get('/patients/doctor/{id}', [DoctorController::class, 'patients']);
+    
     // Users management
     Route::apiResource('users', UserController::class);
     
     // Appointments
-    Route::apiResource('appointments', AppointmentController::class);
     Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'doctorAppointments']);
+    Route::apiResource('appointments', AppointmentController::class);
     Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
-    
-    // Doctor specific protected routes
-    Route::get('/doctors/profile', [DoctorController::class, 'profile']);
-    Route::get('/doctors/stats', [DoctorController::class, 'stats']);
 });
+
+// Parameterized public routes (placed after static routes to avoid collisions)
+Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
 // Admin routes
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
@@ -76,4 +79,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/appointments', [\App\Http\Controllers\Api\AdminController::class, 'appointments']);
     Route::put('/appointments/{id}/status', [\App\Http\Controllers\Api\AdminController::class, 'updateAppointmentStatus']);
     Route::delete('/appointments/{id}', [\App\Http\Controllers\Api\AdminController::class, 'deleteAppointment']);
+});
+
+// Debug catch-all for 404s
+Route::fallback(function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'message' => 'Route not found: ' . $request->fullUrl(),
+        'method' => $request->method(),
+        'path' => $request->path()
+    ], 404);
 });

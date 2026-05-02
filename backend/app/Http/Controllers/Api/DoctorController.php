@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\User;
+use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -165,10 +166,18 @@ class DoctorController extends Controller
     {
         $user = $request->user();
         if ($user->role !== 'doctor') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized. Role is ' . $user->role], 403);
         }
 
-        $doctor = Doctor::with('user')->where('user_id', $user->id)->firstOrFail();
+        $doctor = Doctor::with('user')->where('user_id', $user->id)->first();
+        
+        if (!$doctor) {
+            return response()->json([
+                'message' => 'Doctor profile not found for user ID ' . $user->id,
+                'user' => $user
+            ], 404);
+        }
+
         return response()->json($doctor);
     }
 
@@ -179,10 +188,17 @@ class DoctorController extends Controller
     {
         $user = $request->user();
         if ($user->role !== 'doctor') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized. Role is ' . $user->role], 403);
         }
 
-        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+        $doctor = Doctor::where('user_id', $user->id)->first();
+        
+        if (!$doctor) {
+            return response()->json([
+                'message' => 'Doctor profile not found for user ID ' . $user->id,
+                'user' => $user
+            ], 404);
+        }
         
         $today = now()->startOfDay();
         $weekStart = now()->startOfWeek();
@@ -211,5 +227,17 @@ class DoctorController extends Controller
                 'completed' => $completed
             ]
         ]);
+    }
+
+    /**
+     * Get unique patients for a specific doctor.
+     */
+    public function patients(string $id)
+    {
+        $patients = User::whereHas('appointments', function ($query) use ($id) {
+            $query->where('doctor_id', $id);
+        })->get();
+
+        return response()->json($patients);
     }
 }
