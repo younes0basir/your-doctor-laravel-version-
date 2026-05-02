@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../requests';
 import { 
   FiCalendar, 
@@ -21,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AssistantSidebar from './AssistantSidebar';
 
 const AssistantAppointments = () => {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,11 +65,17 @@ const AssistantAppointments = () => {
 
   useEffect(() => {
     const fetchAppointments = async () => {
+      const token = localStorage.getItem('assistantToken');
+      const userData = JSON.parse(localStorage.getItem('userData'));
+
+      if (!token || !userData || userData.role !== 'assistant') {
+        navigate('/login');
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem('assistantToken');
-        if (!token) throw new Error('No authentication token found');
         
         const profileRes = await api.get('/user', {
           
@@ -76,9 +84,7 @@ const AssistantAppointments = () => {
         const doctorId = profileRes.data?.doctor_id;
         if (!doctorId) throw new Error('No doctor assigned');
         
-        const res = await api.get(`/doctors/${doctorId}/appointments`, {
-          headers: { 'doctor-token': token }
-        });
+        const res = await api.get(`/doctors/${doctorId}/appointments`);
 
         let appointmentsWithEmail = res.data;
         if (appointmentsWithEmail.length > 0 && !appointmentsWithEmail[0].email) {
@@ -113,10 +119,11 @@ const AssistantAppointments = () => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(appt => {
-        const patientName = `${appt.firstName || ''} ${appt.lastName || ''}`.toLowerCase();
+        const patient = appt.patient || {};
+        const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.toLowerCase();
         const type = appt.type ? appt.type.toLowerCase() : '';
         const status = appt.status ? appt.status.toLowerCase() : '';
-        const email = appt.email ? appt.email.toLowerCase() : '';
+        const email = patient.email ? patient.email.toLowerCase() : '';
         
         return (
           patientName.includes(searchTerm.toLowerCase()) ||
@@ -259,9 +266,7 @@ const AssistantAppointments = () => {
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await api.get(`/doctors/${doctorId}/appointments`, {
-        headers: { 'doctor-token': token }
-      });
+      const res = await api.get(`/doctors/${doctorId}/appointments`);
       setAppointments(res.data || []);
     } catch (err) {
       setError(err.message || 'Failed to create appointment');
@@ -313,9 +318,7 @@ const AssistantAppointments = () => {
       setEditForm({ id: null, appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await api.get(`/doctors/${doctorId}/appointments`, {
-        headers: { 'doctor-token': token }
-      });
+      const res = await api.get(`/doctors/${doctorId}/appointments`);
       setAppointments(res.data || []);
       setFilteredAppointments(res.data || []);
     } catch (err) {

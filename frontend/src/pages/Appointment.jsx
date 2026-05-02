@@ -46,8 +46,8 @@ const Appointment = () => {
       console.log('Fetching doctor from API...');
       const response = await api.get(`/doctors/${doctorId}`);
       
-      // Handle response structure
-      const doctorData = response.data?.data || response.data;
+      // Handle response structure: { doctor, average_rating }
+      const doctorData = response.data?.doctor || response.data;
       
       if (!doctorData) throw new Error("Doctor not found");
       
@@ -125,7 +125,7 @@ const Appointment = () => {
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
               <span className="ml-1 text-sm font-medium text-gray-400 md:ml-2">
-                {doctor.firstName} {doctor.lastName}
+                Dr. {doctor.user?.first_name || doctor.first_name} {doctor.user?.last_name || doctor.last_name}
               </span>
             </div>
           </li>
@@ -140,7 +140,7 @@ const Appointment = () => {
             <div className="relative pt-[100%] bg-gradient-to-br from-gray-50 to-gray-100">
               <img
                 src={doctor.image_url || userIcon}
-                alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                alt={`Dr. ${doctor.user?.first_name || doctor.first_name} ${doctor.user?.last_name || doctor.last_name}`}
                 className="absolute top-0 left-0 w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
@@ -150,7 +150,7 @@ const Appointment = () => {
             </div>
             <div className="p-6">
               <h1 className="text-2xl font-bold text-gray-800">
-                Dr. {doctor.firstName} {doctor.lastName}
+                Dr. {doctor.user?.first_name || doctor.first_name} {doctor.user?.last_name || doctor.last_name}
               </h1>
               
               <div className="flex items-center mt-2">
@@ -202,7 +202,7 @@ const Appointment = () => {
         <div className="w-full lg:w-2/3">
           {/* About Section */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100 transition-all hover:shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">About Dr. {doctor.lastName}</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">About Dr. {doctor.user?.last_name || doctor.last_name}</h2>
             <p className="text-gray-600 leading-relaxed">
               {doctor.specialty_description || 'No description available.'}
             </p>
@@ -296,7 +296,7 @@ const Appointment = () => {
             
             <AppointmentBooking
               doctorId={doctorId}
-              doctorName={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+              doctorName={`Dr. ${doctor.user?.first_name || doctor.first_name} ${doctor.user?.last_name || doctor.last_name}`}
               consultationFee={doctor.consultation_fee}
               onSuccess={() => {
                 toast.success(

@@ -23,22 +23,24 @@ const DoctorPatients = () => {
 
   useEffect(() => {
     const fetchPatients = async () => {
+      const token = localStorage.getItem('doctorToken');
+      const userData = JSON.parse(localStorage.getItem('userData'));
+
+      if (!token || !userData || userData.role !== 'doctor') {
+        navigate('/login');
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('doctorToken');
-        if (!token) throw new Error('No authentication token found');
         
-        const profileRes = await api.get('/doctors/profile', {
-          headers: { 'doctor-token': token }
-        });
+        const profileRes = await api.get('/doctors/profile');
         
         const doctorId = profileRes.data?.id;
         if (!doctorId) throw new Error('No doctor id found');
         
-        const res = await api.get(`/patients/doctor/${doctorId}`, {
-          headers: { 'doctor-token': token }
-        });
+        const res = await api.get(`/patients/doctor/${doctorId}`);
         
         setPatients(res.data || []);
         setFilteredPatients(res.data || []);
@@ -61,10 +63,10 @@ const DoctorPatients = () => {
     } else {
       const lowercasedSearch = searchTerm.toLowerCase();
       const filtered = patients.filter(patient => 
-        (patient.firstName && patient.firstName.toLowerCase().includes(lowercasedSearch)) ||
-        (patient.lastName && patient.lastName.toLowerCase().includes(lowercasedSearch)) ||
+        (patient.first_name && patient.first_name.toLowerCase().includes(lowercasedSearch)) ||
+        (patient.last_name && patient.last_name.toLowerCase().includes(lowercasedSearch)) ||
         (patient.email && patient.email.toLowerCase().includes(lowercasedSearch)) ||
-        (patient.phoneNumber && patient.phoneNumber.includes(searchTerm))
+        (patient.phone && patient.phone.includes(searchTerm))
       );
       setFilteredPatients(filtered);
     }
@@ -172,7 +174,7 @@ const DoctorPatients = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {patient.firstName} {patient.lastName}
+                                {patient.first_name} {patient.last_name}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {patient.gender || 'Not specified'}
@@ -187,7 +189,7 @@ const DoctorPatients = () => {
                           </div>
                           <div className="text-sm text-gray-500 flex items-center mt-1">
                             <FiPhone className="mr-2 text-gray-400" />
-                            {patient.phoneNumber || 'Not provided'}
+                            {patient.phone || 'Not provided'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

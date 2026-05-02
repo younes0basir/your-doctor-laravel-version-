@@ -46,7 +46,10 @@ const DoctorSidebar = () => {
   });
   const [newPatientLoading, setNewPatientLoading] = useState(false);
   const [newPatientError, setNewPatientError] = useState('');
-  const [currentDoctorId, setCurrentDoctorId] = useState(localStorage.getItem('doctor'));
+  const [currentDoctorId, setCurrentDoctorId] = useState(() => {
+    const doc = localStorage.getItem('doctor');
+    return doc ? JSON.parse(doc).id : null;
+  });
 
   const handleLogout = () => {
     localStorage.removeItem('doctorToken');
@@ -62,7 +65,7 @@ const DoctorSidebar = () => {
         setPatientsLoading(true);
         setError(null);
         try {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem('doctorToken');
           if (!token) throw new Error('No authentication token found');
 
           let doctorIdToUse = currentDoctorId; // Use state for doctor ID
@@ -95,7 +98,7 @@ const DoctorSidebar = () => {
     setCreateLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
       if (!currentDoctorId) throw new Error('Doctor ID not loaded. Please try again.');
       if (!createForm.patientId) throw new Error('Please select a patient');
@@ -107,8 +110,7 @@ const DoctorSidebar = () => {
           patient_id: createForm.patientId,
           appointment_date: createForm.appointment_date,
           type: createForm.type || 'General'
-        },
-        { headers: { 'doctor-token': token } }
+        }
       );
       setShowNewAppointment(false);
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
@@ -142,11 +144,10 @@ const DoctorSidebar = () => {
     setCinResult(null);
     setNewPatientError('');
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
       const res = await api.get(
-        `/admin/patients?cin=${cinSearch}`,
-        { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
+        `/admin/patients?cin=${cinSearch}`
       );
       const exactMatch = res.data.find(patient => patient.cin === cinSearch);
       if (exactMatch) {
@@ -195,7 +196,7 @@ const DoctorSidebar = () => {
         setNewPatientLoading(false);
         return;
       }
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
 
       const res = await api.post(
@@ -203,8 +204,7 @@ const DoctorSidebar = () => {
         {
           ...newPatientForm,
           password: '', // Assuming password is not needed or handled by backend
-        },
-        { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
+        }
       );
       setCreateForm(f => ({ ...f, patientId: res.data.id }));
       setShowNewPatient(false);

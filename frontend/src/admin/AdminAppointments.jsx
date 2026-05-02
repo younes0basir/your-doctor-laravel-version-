@@ -47,14 +47,16 @@ const AdminAppointments = () => {
       // Map doctor/patient fields for table display
       const mapped = (appointmentsData || []).map(appt => ({
         ...appt,
-        doctor: appt.doctor || {
-          firstName: appt.doctor?.user?.first_name || appt.doctorFirstName || appt.doctorName?.split(' ')[0] || '',
-          lastName: appt.doctor?.user?.last_name || appt.doctorLastName || appt.doctorName?.split(' ').slice(1).join(' ') || ''
+        doctor: {
+          first_name: appt.doctor?.user?.first_name || appt.doctor_first_name || 'N/A',
+          last_name: appt.doctor?.user?.last_name || appt.doctor_last_name || '',
+          full_name: appt.doctor?.user ? `${appt.doctor.user.first_name} ${appt.doctor.user.last_name}` : 'N/A'
         },
-        patient: appt.patient || {
-          firstName: appt.patient?.first_name || appt.patientFirstName || appt.patientName?.split(' ')[0] || '',
-          lastName: appt.patient?.last_name || appt.patientLastName || appt.patientName?.split(' ').slice(1).join(' ') || '',
-          phone: appt.patient?.phone || appt.patientPhone || ''
+        patient: {
+          first_name: appt.patient?.first_name || appt.patient_first_name || 'N/A',
+          last_name: appt.patient?.last_name || appt.patient_last_name || '',
+          full_name: appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : 'N/A',
+          phone: appt.patient?.phone || 'N/A'
         }
       }));
       setAppointments(mapped);
@@ -77,8 +79,8 @@ const AdminAppointments = () => {
       if (search) {
         const query = search.toLowerCase();
         filtered = filtered.filter(appt => {
-          const doctorName = appt.doctor?.name?.toLowerCase() || '';
-          const patientName = appt.patient?.name?.toLowerCase() || '';
+          const doctorName = appt.doctor?.full_name?.toLowerCase() || '';
+          const patientName = appt.patient?.full_name?.toLowerCase() || '';
           const phone = appt.patient?.phone?.toString() || '';
           const type = appt.type?.toLowerCase() || '';
           return (
@@ -374,7 +376,7 @@ const AdminAppointments = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                Dr. {appointment.doctor?.firstName} {appointment.doctor?.lastName}
+                                {appointment.doctor?.full_name}
                               </div>
                               <div className="text-sm text-gray-500">
                                 <span className="inline-flex items-center">
@@ -502,7 +504,7 @@ const AdminAppointments = () => {
                   <option value="">Select Doctor</option>
                   {doctorOptions.map(doctor => (
                     <option key={doctor.id} value={doctor.id}>
-                      Dr. {doctor.firstName} {doctor.lastName}
+                      Dr. {doctor.user?.first_name || doctor.first_name} {doctor.user?.last_name || doctor.last_name}
                     </option>
                   ))}
                 </select>
@@ -520,7 +522,7 @@ const AdminAppointments = () => {
                   <option value="">Select Patient</option>
                   {patientOptions.map(patient => (
                     <option key={patient.id} value={patient.id}>
-                      {patient.firstName} {patient.lastName}
+                      {patient.first_name} {patient.last_name}
                     </option>
                   ))}
                 </select>

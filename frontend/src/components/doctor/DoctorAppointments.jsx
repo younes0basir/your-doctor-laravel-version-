@@ -33,13 +33,17 @@ const DoctorAppointments = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const doctorData = JSON.parse(localStorage.getItem('doctor'));
-    if (!doctorData || doctorData.role !== 'doctor') {
+    const token = localStorage.getItem('doctorToken');
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    
+    if (!token || !userData || userData.role !== 'doctor') {
       navigate('/login');
       return;
     }
-    setDoctor(doctorData);
-    fetchAppointments(doctorData.id);
+    
+    const doctorData = JSON.parse(localStorage.getItem('doctor'));
+    setDoctor(doctorData || userData);
+    fetchAppointments(doctorData?.id || userData.id);
   }, [navigate, refresh]);
 
   const fetchAppointments = async (doctorId) => {
@@ -64,9 +68,10 @@ const DoctorAppointments = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(appointment => {
-          const firstName = appointment.firstName?.toLowerCase() || '';
-          const lastName = appointment.lastName?.toLowerCase() || '';
-          const phone = appointment.phone?.toString() || '';
+          const patient = appointment.patient || {};
+          const firstName = patient.first_name?.toLowerCase() || '';
+          const lastName = patient.last_name?.toLowerCase() || '';
+          const phone = patient.phone?.toString() || '';
           const type = appointment.type?.toLowerCase() || '';
           return (
             firstName.includes(query) ||
@@ -318,11 +323,11 @@ const DoctorAppointments = () => {
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">
-                                  {appointment.firstName} {appointment.lastName}
+                                  {appointment.patient?.first_name} {appointment.patient?.last_name}
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   <span className="inline-flex items-center">
-                                    <FiPhoneCall className="mr-1" /> {appointment.phone}
+                                    <FiPhoneCall className="mr-1" /> {appointment.patient?.phone || 'N/A'}
                                   </span>
                                 </div>
                               </div>

@@ -124,6 +124,9 @@ class AppointmentController extends Controller
             ->orderBy('appointment_date', 'desc')
             ->get();
 
+        return response()->json($appointments);
+    }
+
     /**
      * Get appointments for a specific doctor.
      */
