@@ -32,9 +32,10 @@ const Register = () => {
     try {
       const response = await api.post('/register', {
         first_name: formData.firstName.trim(),
-        last_name: formData.lastName ? formData.lastName.trim() : '',
+        last_name: formData.lastName ? formData.lastName.trim() : ' ', // Send a space if empty to pass required, or we just make it required in UI
         email: formData.email.trim(),
         password: formData.password,
+        password_confirmation: formData.password, // Satisfies Laravel's 'confirmed' rule
         role: 'patient'
       });
 
@@ -97,6 +98,7 @@ const Register = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] focus:border-[#ff5a5f] outline-none transition"
                   placeholder="Dupont"
+                  required
                 />
               </div>
             </div>
@@ -134,8 +136,8 @@ const Register = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] focus:border-[#ff5a5f] outline-none transition"
                 required
-                minLength="6"
-                placeholder="Au moins 6 caractères"
+                minLength="8"
+                placeholder="Au moins 8 caractères"
               />
               <FaLock className="absolute right-3 top-3.5 text-gray-400" />
             </div>

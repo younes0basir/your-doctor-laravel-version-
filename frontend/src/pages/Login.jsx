@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaSpinner } from 'react-icons/fa';
 import api from '../requests';
+import { AppContext } from '../context/AppContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const Login = () => {
     password: '',
   });
   const navigate = useNavigate();
+  const { setToken, setUserData } = useContext(AppContext);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -54,6 +56,10 @@ const Login = () => {
       
       // Also store common user data
       localStorage.setItem('userData', JSON.stringify(user));
+      
+      // Update global context state so navbar updates immediately
+      setToken(token);
+      setUserData(user);
       
       toast.success('Connexion réussie!');
       
