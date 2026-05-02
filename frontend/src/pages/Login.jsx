@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaSpinner } from 'react-icons/fa';
-import api from '../../requests';
+import api from '../requests';
 
 const Login = () => {
   const [formData, setFormData] = useState({

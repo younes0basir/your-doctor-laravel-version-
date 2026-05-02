@@ -16,7 +16,7 @@ import {
   FiEdit,
   FiPlus
 } from 'react-icons/fi';
-import api from '../../requests';
+import api from '../requests';
 
 const AdminAccounts = () => {
   const [accounts, setAccounts] = useState([]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../requests';
+import api from '../requests';
 import { FiUserPlus, FiBriefcase, FiMail, FiLock, FiPhone, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 

@@ -14,7 +14,7 @@ import {
   FiCheckCircle,
   FiAlertCircle
 } from 'react-icons/fi';
-import api from '../../requests';
+import api from '../requests';
 
 const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
-import api from '../../requests';
+import api from '../requests';
 
 const Register = () => {
   const [formData, setFormData] = useState({

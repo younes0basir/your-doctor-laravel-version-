@@ -10,7 +10,7 @@ import {
   FiLoader,
   FiAlertCircle
 } from 'react-icons/fi';
-import api from '../../requests';
+import api from '../requests';
 import userIcon from '../assets/user_icon.svg';
 
 const ListOfDoctors = () => {

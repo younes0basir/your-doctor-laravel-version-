@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import api from '../../requests';
+import api from '../requests';
 import { 
   FiUser,
   FiMail,

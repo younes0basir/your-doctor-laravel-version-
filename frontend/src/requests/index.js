@@ -1,43 +1,48 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
-
+// Create an Axios instance with Laravel backend URL
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
+// Add a request interceptor to attach the token automatically
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('patientToken') || 
-                  localStorage.getItem('doctorToken') ||
-                  localStorage.getItem('adminToken');
-    
+    // Try tokens in priority order
+    const token = localStorage.getItem('adminToken') || 
+                  localStorage.getItem('doctorToken') || 
+                  localStorage.getItem('patientToken');
+                  
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
-    
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors
+// Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear tokens and redirect to login
+    // Handle 401 Unauthorized errors
+    if (error.response && error.response.status === 401) {
+      console.warn('401 Unauthorized - Clearing session and redirecting to login');
+      
+      // Clear all possible tokens and user data
+      localStorage.removeItem('adminToken');
       localStorage.removeItem('patientToken');
       localStorage.removeItem('doctorToken');
-      localStorage.removeItem('adminToken');
       localStorage.removeItem('userData');
-      window.location.href = '/login';
+      
+      // Redirect to login unless already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

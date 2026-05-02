@@ -20,7 +20,7 @@ import {
 } from "react-icons/fa";
 import { FiLoader } from "react-icons/fi";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
-import api from '../../requests';
+import api from '../requests';
 
 const Appointment = () => {
   const { doctorId } = useParams();

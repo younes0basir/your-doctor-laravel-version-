@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { assets } from '../assets/assets';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import api from '../../requests';
+import api from '../requests';
 
 const FeaturedDoctors = () => {
     const [featuredDoctors, setFeaturedDoctors] = useState([]);

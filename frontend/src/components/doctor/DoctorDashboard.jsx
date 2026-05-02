@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../../requests';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './DoctorSidebar';
 import {

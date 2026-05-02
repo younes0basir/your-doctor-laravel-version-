@@ -25,7 +25,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import api from '../../requests';
+import api from '../requests';
 
 // Mock data for static demo
 const MOCK_ACCOUNTS = [
