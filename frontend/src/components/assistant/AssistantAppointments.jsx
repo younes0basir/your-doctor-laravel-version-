@@ -17,7 +17,7 @@ import {
   FiLoader,
   FiChevronDown,
   FiChevronUp,
-  FiUserPlus // <-- add this import
+  FiFileText
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import AssistantSidebar from './AssistantSidebar';
@@ -998,6 +998,17 @@ const AssistantAppointments = () => {
                                   </div>
                                   
                                   <div className="flex flex-wrap gap-2">
+                                    <motion.button
+                                      className="px-3 py-1 border border-blue-300 rounded-md text-sm text-blue-700 hover:bg-blue-50 flex items-center"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/assistant/medical-records/${appt.patient_id}`);
+                                      }}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <FiFileText className="mr-1" /> Records
+                                    </motion.button>
                                     <motion.button
                                       className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                       onClick={() => handleEditClick(appt)}

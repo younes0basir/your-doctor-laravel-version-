@@ -28,6 +28,7 @@ import AssistantDashboard from './components/assistant/AssistantDashboard';
 import AssistantAppointments from './components/assistant/AssistantAppointments';
 import AssistantPatients from './components/assistant/AssistantPatients';
 import AssistantManageQueue from './components/assistant/AssistantManageQueue';
+import MedicalRecords from './components/medical/MedicalRecords';
 
 const App = () => {
   const location = useLocation();
@@ -67,6 +68,7 @@ const App = () => {
             <Route path="assistants" element={<DoctorAssistants />} />
             <Route path="settings" element={<DoctorSettings />} />
             <Route path="office-queue" element={<DoctorOfficeQueue />} />
+            <Route path="medical-records/:patientId" element={<MedicalRecords />} />
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Doctor page not found</div>} />
             <Route index element={<DoctorDashboard />} />
           </Route>
@@ -76,6 +78,7 @@ const App = () => {
             <Route path="appointments" element={<AssistantAppointments />} />
             <Route path="patients" element={<AssistantPatients />} />
             <Route path="manage-queue" element={<AssistantManageQueue />} />
+            <Route path="medical-records/:patientId" element={<MedicalRecords />} />
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Assistant page not found</div>} />
             <Route index element={<AssistantDashboard />} />
           </Route>

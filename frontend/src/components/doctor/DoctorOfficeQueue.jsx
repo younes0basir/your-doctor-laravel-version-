@@ -8,7 +8,8 @@ import {
   FiCheckCircle, 
   FiPlayCircle,
   FiLoader,
-  FiAlertCircle
+  FiAlertCircle,
+  FiFileText
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import DoctorSidebar from './DoctorSidebar';
@@ -133,14 +134,22 @@ const DoctorOfficeQueue = () => {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleQueueAction(appt.id, 'finished')}
-                          disabled={actionLoading === appt.id}
-                          className="w-full sm:w-auto px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm font-medium flex items-center justify-center"
-                        >
-                          {actionLoading === appt.id ? <FiLoader className="animate-spin mr-2" /> : <FiCheckCircle className="mr-2" />}
-                          Terminer la consultation
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                          <button
+                            onClick={() => navigate(`/doctor/medical-records/${appt.patient_id}`)}
+                            className="px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition shadow-sm font-medium flex items-center justify-center"
+                          >
+                            <FiFileText className="mr-2" /> Records
+                          </button>
+                          <button
+                            onClick={() => handleQueueAction(appt.id, 'finished')}
+                            disabled={actionLoading === appt.id}
+                            className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-sm font-medium flex items-center justify-center"
+                          >
+                            {actionLoading === appt.id ? <FiLoader className="animate-spin mr-2" /> : <FiCheckCircle className="mr-2" />}
+                            Terminer la consultation
+                          </button>
+                        </div>
                       </div>
                     ))
                   ) : (

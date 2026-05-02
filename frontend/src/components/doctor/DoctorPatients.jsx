@@ -210,11 +210,11 @@ const DoctorPatients = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
-                            onClick={() => navigate(`/doctor/patient-history/${patient.id}`)}
+                            onClick={() => navigate(`/doctor/medical-records/${patient.id}`)}
                             className="bg-[#ff5a5f] bg-opacity-10 hover:bg-opacity-20 text-[#ff5a5f] px-4 py-2 rounded-lg flex items-center justify-center transition-colors"
                           >
                             <FiFileText className="mr-2" />
-                            View History
+                            View Records
                           </button>
                         </td>
                       </tr>

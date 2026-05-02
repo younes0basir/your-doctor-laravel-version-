@@ -59,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/appointments/{id}/queue', [AppointmentController::class, 'updateQueueStatus']);
     Route::patch('/appointments/{id}/payment-status', [AppointmentController::class, 'updatePaymentStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
+
+    // Medical Records
+    Route::apiResource('medical-records', \App\Http\Controllers\MedicalRecordController::class);
+    Route::get('/medical-records/patient/{patientId}', [\App\Http\Controllers\MedicalRecordController::class, 'getByPatient']);
 });
 
 // Parameterized public routes (placed after static routes to avoid collisions)

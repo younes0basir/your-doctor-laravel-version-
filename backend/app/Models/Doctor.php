@@ -71,4 +71,11 @@ class Doctor extends Model
     {
         return $this->reviews()->avg('rating') ?? 0.0;
     }
+    /**
+     * Get the medical records for the doctor.
+     */
+    public function medicalRecords()
+    {
+        return $this->hasMany(MedicalRecord::class);
+    }
 }
