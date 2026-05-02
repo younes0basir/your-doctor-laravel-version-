@@ -23,7 +23,7 @@ const Register = () => {
     setLoading(true);
 
     // Validate required fields
-    if (!formData.email || !formData.password || !formData.firstName) {
+    if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       setLoading(false);
       return;
@@ -32,7 +32,7 @@ const Register = () => {
     try {
       const response = await api.post('/register', {
         first_name: formData.firstName.trim(),
-        last_name: formData.lastName ? formData.lastName.trim() : ' ', // Send a space if empty to pass required, or we just make it required in UI
+        last_name: formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
         password_confirmation: formData.password, // Satisfies Laravel's 'confirmed' rule
@@ -43,9 +43,22 @@ const Register = () => {
       navigate('/login');
     } catch (err) {
       console.error('Error registering user:', err);
-      
-      if (err.response?.data?.message?.includes('email')) {
+      console.error('Error details:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url,
+        baseURL: err.config?.baseURL
+      });
+
+      if (err.code === 'ERR_NETWORK') {
+        toast.error('Impossible de contacter le serveur. Vérifiez que le backend est démarré (php artisan serve) et que CORS est configuré.');
+      } else if (err.response?.data?.message?.includes('email')) {
         toast.error('Cet email est déjà enregistré. Veuillez vous connecter.');
+      } else if (err.response?.status === 500) {
+        toast.error('Erreur serveur (500). Vérifiez les logs Laravel.');
       } else {
         toast.error(err.response?.data?.message || 'L\'inscription a échoué. Veuillez réessayer.');
       }
