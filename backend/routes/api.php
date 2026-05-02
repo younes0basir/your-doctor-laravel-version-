@@ -40,7 +40,11 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Doctor specific protected routes
     Route::get('/doctors/profile', [DoctorController::class, 'profile']);
+    Route::put('/doctors/profile', [DoctorController::class, 'updateProfile']);
     Route::get('/doctors/stats', [DoctorController::class, 'stats']);
+    Route::get('/doctors/specialities', [DoctorController::class, 'specialities']);
+    Route::post('/doctors/upload-image', [DoctorController::class, 'uploadImage']);
+    Route::put('/doctors/change-password', [DoctorController::class, 'changePassword']);
     Route::get('/patients/doctor/{id}', [DoctorController::class, 'patients']);
     
     // Users management

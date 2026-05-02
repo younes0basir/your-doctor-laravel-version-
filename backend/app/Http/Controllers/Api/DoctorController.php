@@ -240,4 +240,108 @@ class DoctorController extends Controller
 
         return response()->json($patients);
     }
+
+    /**
+     * Update doctor profile.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'doctor') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+
+        // Update User
+        $user->update([
+            'first_name' => $request->firstName ?? $user->first_name,
+            'last_name' => $request->lastName ?? $user->last_name,
+            'address' => $request->address ?? $user->address,
+            'image' => $request->image_url ?? $user->image,
+        ]);
+
+        // Update Doctor
+        $doctor->update([
+            'about' => $request->specialty_description ?? $doctor->about,
+            'consultation_fee' => $request->consultation_fee ?? $doctor->consultation_fee,
+            'experience_years' => $request->experience_years ?? $doctor->experience_years,
+            'education' => $request->degree ?? $doctor->education,
+            // 'city' is not on user/doctor models directly, could be added to address
+        ]);
+
+        // Attach updated user to doctor to return in the same format
+        $doctor->user = $user;
+        // Map frontend fields back
+        $doctor->firstName = $user->first_name;
+        $doctor->lastName = $user->last_name;
+        $doctor->email = $user->email;
+        $doctor->image_url = $user->image;
+        $doctor->address = $user->address;
+        $doctor->specialty_description = $doctor->about;
+        $doctor->degree = $doctor->education;
+
+        return response()->json($doctor);
+    }
+
+    /**
+     * Upload doctor image.
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:5120',
+        ]);
+
+        $user = $request->user();
+        if ($user->role !== 'doctor') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $path = $request->file('image')->store('profiles', 'public');
+        $imageUrl = url('storage/' . $path);
+
+        $user->update(['image' => $imageUrl]);
+
+        return response()->json(['image_url' => $imageUrl]);
+    }
+
+    /**
+     * Change doctor password.
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'currentPassword' => 'required',
+            'newPassword' => 'required|min:6',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->currentPassword, $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect'], 400);
+        }
+
+        $user->update(['password' => Hash::make($request->newPassword)]);
+
+        return response()->json(['message' => 'Password changed successfully']);
+    }
+
+    /**
+     * Get specialities.
+     */
+    public function specialities()
+    {
+        // Static list for now to satisfy the frontend requirement
+        $specialities = [
+            ['id' => 1, 'name' => 'Cardiology'],
+            ['id' => 2, 'name' => 'Dermatology'],
+            ['id' => 3, 'name' => 'Neurology'],
+            ['id' => 4, 'name' => 'Pediatrics'],
+            ['id' => 5, 'name' => 'Psychiatry'],
+            ['id' => 6, 'name' => 'General Practice'],
+        ];
+
+        return response()->json($specialities);
+    }
 }

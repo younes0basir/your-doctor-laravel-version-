@@ -22,6 +22,7 @@ import DoctorDashboard from './components/doctor/DoctorDashboard';
 import DoctorAppointments from './components/doctor/DoctorAppointments';
 import DoctorPatients from './components/doctor/DoctorPatients';
 import DoctorAssistants from './components/doctor/DoctorAssistants';
+import DoctorSettings from './components/doctor/DoctorSettings';
 import AssistantDashboard from './components/assistant/AssistantDashboard';
 import AssistantAppointments from './components/assistant/AssistantAppointments';
 import AssistantPatients from './components/assistant/AssistantPatients';
@@ -61,6 +62,7 @@ const App = () => {
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="patients" element={<DoctorPatients />} />
             <Route path="assistants" element={<DoctorAssistants />} />
+            <Route path="settings" element={<DoctorSettings />} />
             {/* fallback for unknown doctor routes */}
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Doctor page not found</div>} />
             <Route index element={<DoctorDashboard />} />

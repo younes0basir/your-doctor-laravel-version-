@@ -255,7 +255,7 @@ const DoctorSettings = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 overflow-hidden">
-      <DoctorSidebar />
+      <DoctorSidebar activeTab="settings" />
       
       <div className="flex-1 flex flex-col h-screen">
         <div className="bg-white shadow-sm p-6 z-10">
