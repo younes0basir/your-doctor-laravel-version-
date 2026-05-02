@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiCreditCard, FiLoader, FiCheck } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../requests';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = '';
 
 const PaymentFictif = () => {
   const { appointmentId } = useParams();
@@ -20,7 +20,7 @@ const PaymentFictif = () => {
     setError(null);
     try {
       const patientToken = localStorage.getItem('patientToken');
-      await axios.put(
+      await api.put(
         `${BASE_URL}/appointments/${appointmentId}/payment-status`,
         { payment_status: 'paid' },
         {

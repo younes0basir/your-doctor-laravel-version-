@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../requests';
 
 const AdminTable = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     // Fetch data from the backend
-    axios.get('/api/admin/users')
+    api.get('/api/admin/users')
       .then(response => {
         setData(response.data);
       })

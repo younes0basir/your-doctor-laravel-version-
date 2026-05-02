@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { 
   FiCalendar, 
   FiClock, 
@@ -69,20 +69,20 @@ const AssistantAppointments = () => {
         const token = localStorage.getItem('assistantToken');
         if (!token) throw new Error('No authentication token found');
         
-        const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-          headers: { 'assistant-token': token }
+        const profileRes = await api.get('/user', {
+          
         });
         
         const doctorId = profileRes.data?.doctor_id;
         if (!doctorId) throw new Error('No doctor assigned');
         
-        const res = await axios.get(`http://localhost:5000/api/doctors/${doctorId}/appointments`, {
+        const res = await api.get(`/doctors/${doctorId}/appointments`, {
           headers: { 'doctor-token': token }
         });
 
         let appointmentsWithEmail = res.data;
         if (appointmentsWithEmail.length > 0 && !appointmentsWithEmail[0].email) {
-          const patientsRes = await axios.get('http://localhost:5000/api/admin/patients');
+          const patientsRes = await api.get('/admin/patients');
           const patientsMap = {};
           (patientsRes.data || []).forEach(p => {
             patientsMap[p.id] = p.email;
@@ -163,14 +163,14 @@ const AssistantAppointments = () => {
       const token = localStorage.getItem('assistantToken');
       let endpoint;
       if (newStatus === 'confirmed') {
-        endpoint = `http://localhost:5000/api/appointments/${appointmentId}/confirm`;
+        endpoint = `/appointments/${appointmentId}/confirm`;
       } else if (newStatus === 'canceled' || newStatus === 'cancelled') {
-        endpoint = `http://localhost:5000/api/appointments/${appointmentId}/cancel`;
+        endpoint = `/appointments/${appointmentId}/cancel`;
       } else {
         return;
       }
-      await axios.put(endpoint, {}, {
-        headers: { 'assistant-token': token }
+      await api.put(endpoint, {}, {
+        
       });
       setAppointments(prev =>
         prev.map(app =>
@@ -186,10 +186,10 @@ const AssistantAppointments = () => {
     setPaymentStatusLoading(prev => ({ ...prev, [appointment.id]: true }));
     try {
       const token = localStorage.getItem('assistantToken');
-      await axios.put(
-        `http://localhost:5000/api/appointments/${appointment.id}/payment-status`,
+      await api.put(
+        `/appointments/${appointment.id}/payment-status`,
         { payment_status: newStatus },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       setAppointments(appts =>
         appts.map(a =>
@@ -211,14 +211,14 @@ const AssistantAppointments = () => {
         try {
           const token = localStorage.getItem('assistantToken');
           // Get doctorId from assistant profile
-          const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-            headers: { 'assistant-token': token }
+          const profileRes = await api.get('/user', {
+            
           });
           const doctorId = profileRes.data?.doctor_id;
           if (!doctorId) throw new Error('No doctor assigned');
           // Fetch only patients assigned to this doctor
-          const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorId}`, {
-            headers: { 'assistant-token': token }
+          const res = await api.get(`/patients/doctor/${doctorId}`, {
+            
           });
           setPatients(res.data || []);
         } catch {
@@ -238,28 +238,28 @@ const AssistantAppointments = () => {
     try {
       const token = localStorage.getItem('assistantToken');
       // Get doctorId from assistant profile
-      const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-        headers: { 'assistant-token': token }
+      const profileRes = await api.get('/user', {
+        
       });
       const doctorId = profileRes.data?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
       if (!createForm.patientId) throw new Error('Please select a patient');
 
-      await axios.post(
-        'http://localhost:5000/api/appointments',
+      await api.post(
+        '/appointments',
         {
           doctor_id: doctorId,
           patient_id: createForm.patientId,
           appointment_date: createForm.appointment_date,
           type: createForm.type || 'General'
         },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       setShowCreateForm(false);
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/doctors/${doctorId}/appointments`, {
+      const res = await api.get(`/doctors/${doctorId}/appointments`, {
         headers: { 'doctor-token': token }
       });
       setAppointments(res.data || []);
@@ -287,8 +287,8 @@ const AssistantAppointments = () => {
     try {
       const token = localStorage.getItem('assistantToken');
       // Get doctorId from assistant profile
-      const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-        headers: { 'assistant-token': token }
+      const profileRes = await api.get('/user', {
+        
       });
       const doctorId = profileRes.data?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
@@ -298,8 +298,8 @@ const AssistantAppointments = () => {
       if (!appt) throw new Error('Appointment not found');
 
       // Update appointment
-      await axios.put(
-        `http://localhost:5000/api/appointments/${editForm.id}`,
+      await api.put(
+        `/appointments/${editForm.id}`,
         {
           doctor_id: doctorId,
           patient_id: appt.patient_id,
@@ -307,13 +307,13 @@ const AssistantAppointments = () => {
           type: editForm.type,
           status: appt.status
         },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       setShowEditForm(false);
       setEditForm({ id: null, appointment_date: '', type: 'physical' });
       // Refresh appointments
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/doctors/${doctorId}/appointments`, {
+      const res = await api.get(`/doctors/${doctorId}/appointments`, {
         headers: { 'doctor-token': token }
       });
       setAppointments(res.data || []);
@@ -353,8 +353,8 @@ const AssistantAppointments = () => {
     setNewPatientError('');
     try {
       const token = localStorage.getItem('assistantToken');
-      const res = await axios.get(
-        `http://localhost:5000/api/admin/patients?cin=${cinSearch}`,
+      const res = await api.get(
+        `/admin/patients?cin=${cinSearch}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Find exact CIN match
@@ -404,8 +404,8 @@ const AssistantAppointments = () => {
         return;
       }
       const token = localStorage.getItem('assistantToken');
-      const res = await axios.post(
-        'http://localhost:5000/api/admin/patients',
+      const res = await api.post(
+        '/admin/patients',
         {
           ...newPatientForm,
           password: '',

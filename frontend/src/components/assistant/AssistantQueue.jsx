@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import AssistantSidebar from './AssistantSidebar';
 import { 
@@ -59,8 +59,8 @@ const AssistantPatients = () => {
         return;
       }
 
-      const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-        headers: { 'assistant-token': token }
+      const profileRes = await api.get('/user', {
+        
       });
       
       const doctorId = profileRes.data?.doctor_id;
@@ -70,8 +70,8 @@ const AssistantPatients = () => {
         return;
       }
 
-      const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorId}`, {
-        headers: { 'assistant-token': token }
+      const res = await api.get(`/patients/doctor/${doctorId}`, {
+        
       });
       
       setPatients(res.data || []);

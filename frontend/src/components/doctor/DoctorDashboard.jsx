@@ -60,9 +60,9 @@ const DoctorDashboard = () => {
         }
 
         setLoading(true);
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
         // Only fetch stats from backend, not profile
-        const statsRes = await axios.get(`${API_BASE}/doctors/stats`, {
+        const statsRes = await api.get(`/doctors/stats`, {
           headers: { 'doctor-token': doctorToken }
         });
         setStats(statsRes.data);
@@ -85,8 +85,8 @@ const DoctorDashboard = () => {
         const doctorData = JSON.parse(localStorage.getItem('doctor'));
         if (!doctorData || !doctorData.id) return;
         const token = localStorage.getItem('token');
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-        const res = await axios.get(`${API_BASE}/appointments/doctor/${doctorData.id}`, {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+        const res = await api.get(`/appointments/doctor/${doctorData.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAppointments(res.data);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { 
@@ -29,14 +29,14 @@ const DoctorPatients = () => {
         const token = localStorage.getItem('doctorToken');
         if (!token) throw new Error('No authentication token found');
         
-        const profileRes = await axios.get('http://localhost:5000/api/doctors/profile', {
+        const profileRes = await api.get('/doctors/profile', {
           headers: { 'doctor-token': token }
         });
         
         const doctorId = profileRes.data?.id;
         if (!doctorId) throw new Error('No doctor id found');
         
-        const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorId}`, {
+        const res = await api.get(`/patients/doctor/${doctorId}`, {
           headers: { 'doctor-token': token }
         });
         

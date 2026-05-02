@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiLoader, FiUserPlus, FiSearch } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../requests';
 
 const NewAppointment = ({ onClose }) => {
   const navigate = useNavigate();
@@ -39,14 +39,14 @@ const NewAppointment = ({ onClose }) => {
       try {
         const token = localStorage.getItem('assistantToken');
         // Get doctorId from assistant profile
-        const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-          headers: { 'assistant-token': token }
+        const profileRes = await api.get('/user', {
+          
         });
         const doctorId = profileRes.data?.doctor_id;
         if (!doctorId) throw new Error('No doctor assigned');
         // Fetch only patients assigned to this doctor
-        const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorId}`, {
-          headers: { 'assistant-token': token }
+        const res = await api.get(`/patients/doctor/${doctorId}`, {
+          
         });
         setPatients(res.data || []);
       } catch {
@@ -81,8 +81,8 @@ const NewAppointment = ({ onClose }) => {
     setNewPatientError('');
     try {
       const token = localStorage.getItem('assistantToken');
-      const res = await axios.get(
-        `http://localhost:5000/api/admin/patients?cin=${cinSearch}`,
+      const res = await api.get(
+        `/admin/patients?cin=${cinSearch}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data && res.data.length > 0) {
@@ -127,8 +127,8 @@ const NewAppointment = ({ onClose }) => {
       }
       // Create patient (no password, admin will handle)
       const token = localStorage.getItem('assistantToken');
-      const res = await axios.post(
-        'http://localhost:5000/api/admin/patients',
+      const res = await api.post(
+        '/admin/patients',
         {
           ...newPatientForm,
           password: '', // or null
@@ -154,22 +154,22 @@ const NewAppointment = ({ onClose }) => {
     try {
       const token = localStorage.getItem('assistantToken');
       // Get doctorId from assistant profile
-      const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-        headers: { 'assistant-token': token }
+      const profileRes = await api.get('/user', {
+        
       });
       const doctorId = profileRes.data?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
       if (!form.patientId) throw new Error('Please select a patient');
 
-      await axios.post(
-        'http://localhost:5000/api/appointments',
+      await api.post(
+        '/appointments',
         {
           doctor_id: doctorId,
           patient_id: form.patientId,
           appointment_date: form.appointment_date,
           type: form.type || 'General'
         },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       if (onClose) {
         onClose();

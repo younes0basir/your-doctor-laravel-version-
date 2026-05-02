@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import AssistantSidebar from './AssistantSidebar';
 import {
@@ -61,8 +61,8 @@ const AssistantManageQueue = () => {
         toast.error('Please login to view queue');
         return;
       }
-      const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-        headers: { 'assistant-token': token }
+      const profileRes = await api.get('/user', {
+        
       });
       const doctorId = profileRes.data?.doctor_id;
       setDoctorId(doctorId);
@@ -72,9 +72,9 @@ const AssistantManageQueue = () => {
         return;
       }
       // Use assistant endpoint and send assistant-token
-      const appointmentsRes = await axios.get(
-        `http://localhost:5000/api/appointments/assistant/doctor/${doctorId}`,
-        { headers: { 'assistant-token': token } }
+      const appointmentsRes = await api.get(
+        `/appointments/assistant/doctor/${doctorId}`,
+        {  }
       );
       setQueue(appointmentsRes.data || []);
       setFilteredQueue(appointmentsRes.data || []);
@@ -127,10 +127,10 @@ const AssistantManageQueue = () => {
       } else {
         newIsInQueue = true;
       }
-      await axios.patch(
-        `http://localhost:5000/api/appointments/${appointmentId}/queue-status`,
+      await api.patch(
+        `/appointments/${appointmentId}/queue-status`,
         { is_in_queue: newIsInQueue },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       toast.success(`Patient ${newIsInQueue ? 'added to' : 'removed from'} queue`);
       // Refetch queue from backend to ensure sync

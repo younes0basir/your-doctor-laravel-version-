@@ -141,7 +141,7 @@ const AdminAccounts = () => {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await api.delete(`/admin/accounts/${deleteTarget.type}/${deleteTarget.id}`);
+      await api.delete(`/admin/accounts/${deleteTarget.id}`);
       setAccounts(accounts => accounts.filter(acc => !(acc.type === deleteTarget.type && acc.id === deleteTarget.id)));
       toast.success('Account deleted successfully');
     } catch (error) {

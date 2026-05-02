@@ -97,14 +97,13 @@ const AdminAccountCreate = () => {
       let url = '/admin/accounts';
 
       if (type === 'assistant') {
-        // Use the correct endpoint for assistant creation
-        url = '/assistants';
         payload = {
           email: form.email,
           password: form.password,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          doctor_id: form.doctor_id
+          first_name: form.firstName,
+          last_name: form.lastName,
+          doctor_id: form.doctor_id,
+          role: 'assistant'
         };
       }
 

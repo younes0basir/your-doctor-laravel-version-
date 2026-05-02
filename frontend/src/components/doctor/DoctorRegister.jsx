@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUserMd, FaLock, FaBriefcaseMedical, FaMoneyBillWave, FaGraduationCap, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
@@ -28,7 +28,7 @@ const DoctorRegister = () => {
 
   const fetchSpecialities = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/specialities');
+      const response = await api.get('/specialities');
       setSpecialities(response.data);
     } catch (error) {
       console.error('Error fetching specialities:', error);
@@ -44,7 +44,7 @@ const DoctorRegister = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/doctors/register', formData);
+      const response = await api.post('/doctors/register', formData);
       toast.success('Registration successful!');
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('doctor', JSON.stringify(response.data.doctor));

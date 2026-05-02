@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { 
   FiUser, 
   FiMail, 
@@ -67,20 +67,20 @@ const AssistantDashboard = () => {
         if (!token) throw new Error('Authentication required');
 
         // Get assistant profile
-        const res = await axios.get('http://localhost:5000/api/assistants/profile', {
-          headers: { 'assistant-token': token }
+        const res = await api.get('/user', {
+          
         });
         setAssistant(res.data);
 
         // Get doctor info if assigned
         if (res.data?.doctor_id) {
-          const docRes = await axios.get(`http://localhost:5000/api/doctors/${res.data.doctor_id}`);
+          const docRes = await api.get(`/doctors/${res.data.doctor_id}`);
           setDoctor(docRes.data);
           
           // Try to get stats, but don't fail if endpoint doesn't exist
           try {
-            const statsRes = await axios.get(`http://localhost:5000/api/assistants/stats`, {
-              headers: { 'assistant-token': token }
+            const statsRes = await api.get(`/assistants/stats`, {
+              
             });
             setStats(statsRes.data);
           } catch (statsError) {
@@ -109,8 +109,8 @@ const AssistantDashboard = () => {
           if (!token) throw new Error('No authentication token found');
           if (!doctorId) throw new Error('No doctor assigned to assistant');
           
-          const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorId}`, {
-            headers: { 'assistant-token': token }
+          const res = await api.get(`/patients/doctor/${doctorId}`, {
+            
           });
           setPatients(res.data || []);
         } catch(err) {
@@ -135,15 +135,15 @@ const AssistantDashboard = () => {
       if (!doctorId) throw new Error('No doctor assigned');
       if (!createForm.patientId) throw new Error('Please select a patient');
 
-      await axios.post(
-        'http://localhost:5000/api/appointments',
+      await api.post(
+        '/appointments',
         {
           doctor_id: doctorId,
           patient_id: createForm.patientId,
           appointment_date: createForm.appointment_date,
           type: createForm.type || 'General'
         },
-        { headers: { 'assistant-token': token } }
+        {  }
       );
       setShowNewAppointment(false);
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
@@ -182,8 +182,8 @@ const AssistantDashboard = () => {
       const token = localStorage.getItem('assistantToken');
       if (!token) throw new Error('No authentication token found');
 
-      const res = await axios.get(
-        `http://localhost:5000/api/admin/patients?cin=${cinSearch}`,
+      const res = await api.get(
+        `/admin/patients?cin=${cinSearch}`,
         { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
       );
       // Find exact CIN match
@@ -238,8 +238,8 @@ const AssistantDashboard = () => {
       const token = localStorage.getItem('assistantToken');
       if (!token) throw new Error('No authentication token found');
 
-      const res = await axios.post(
-        'http://localhost:5000/api/admin/patients',
+      const res = await api.post(
+        '/admin/patients',
         {
           ...newPatientForm,
           password: '', // Assuming password is not needed or handled by backend

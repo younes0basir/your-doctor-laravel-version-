@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUserMd, FaLock, FaArrowRight, FaSpinner } from 'react-icons/fa';
@@ -30,7 +30,7 @@ const DoctorLogin = () => {
       localStorage.removeItem('assistantToken');
       localStorage.removeItem('assistant');
 
-      const response = await axios.post('http://localhost:5000/api/doctors/login', formData);
+      const response = await api.post('/doctors/login', formData);
       const { token, doctor, admin, assistant } = response.data;
 
       if (admin && (admin.role === 'admin' || admin.isAdmin)) {

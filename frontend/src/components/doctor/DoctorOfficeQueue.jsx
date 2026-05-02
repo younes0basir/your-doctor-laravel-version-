@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './DoctorSidebar';
@@ -16,7 +16,7 @@ import {
   FiSearch
 } from 'react-icons/fi';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = '';
 
 const DoctorOfficeQueue = () => {
   const [queuedAppointments, setQueuedAppointments] = useState([]);
@@ -69,7 +69,7 @@ const DoctorOfficeQueue = () => {
         return;
       }
 
-      const response = await axios.get(`${BASE_URL}/appointments/queue/${doctorData.id}`, {
+      const response = await api.get(`${BASE_URL}/appointments/queue/${doctorData.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -87,7 +87,7 @@ const DoctorOfficeQueue = () => {
 
   const handleStartAppointment = async (appointmentId) => {
     try {
-      await axios.put(`${BASE_URL}/appointments/${appointmentId}/start`, {}, {
+      await api.put(`${BASE_URL}/appointments/${appointmentId}/start`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success('Appointment started successfully');
@@ -104,7 +104,7 @@ const DoctorOfficeQueue = () => {
     }
 
     try {
-      await axios.put(`${BASE_URL}/appointments/${appointmentId}/end`, {}, {
+      await api.put(`${BASE_URL}/appointments/${appointmentId}/end`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success('Appointment completed successfully');

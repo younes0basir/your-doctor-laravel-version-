@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../requests';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -19,7 +19,7 @@ const AdminRegister = () => {
       return;
     }
     try {
-      await axios.post(`${API_URL}/api/admin/register`, { email, password });
+      await api.post(`${API_URL}/api/admin/register`, { email, password });
       alert('Admin registered successfully!');
       navigate('/admin-login');
     } catch (err) {

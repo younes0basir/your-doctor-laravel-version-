@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -17,7 +17,7 @@ import {
 import { startOfToday, startOfTomorrow, startOfWeek, endOfWeek, addWeeks, isSameDay, isWithinInterval } from 'date-fns';
 import DoctorSidebar from './DoctorSidebar';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = '';
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -46,7 +46,7 @@ const DoctorAppointments = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${BASE_URL}/appointments/doctor/${doctorId}`, {
+      const response = await api.get(`${BASE_URL}/appointments/doctor/${doctorId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAppointments(response.data);
@@ -127,7 +127,7 @@ const DoctorAppointments = () => {
         ? `${BASE_URL}/appointments/${appointmentId}/confirm`
         : `${BASE_URL}/appointments/${appointmentId}/cancel`;
 
-      await axios.put(endpoint, {}, {
+      await api.put(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -151,7 +151,7 @@ const DoctorAppointments = () => {
       const token = localStorage.getItem('token');
       // Toggle payment status: if 'paid' -> 'unpaid', else 'paid'
       const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
-      await axios.put(
+      await api.put(
         `${BASE_URL}/appointments/${appointmentId}/payment-status`,
         { payment_status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }

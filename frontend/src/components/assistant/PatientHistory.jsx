@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../requests';
 import { FiClock, FiLoader, FiArrowLeft } from 'react-icons/fi';
 import AssistantSidebar from './AssistantSidebar';
 
@@ -18,16 +18,16 @@ const PatientHistory = () => {
         if (!token) throw new Error('Authentication required');
 
         // Get assistant profile to get doctor_id
-        const profileRes = await axios.get('http://localhost:5000/api/assistants/profile', {
-          headers: { 'assistant-token': token }
+        const profileRes = await api.get('/user', {
+          
         });
         const doctorId = profileRes.data?.doctor_id;
         if (!doctorId) throw new Error('No doctor assigned');
 
         // Use assistant-token header for this request as well
-        const response = await axios.get(
-          `http://localhost:5000/api/doctors/${doctorId}/patients/${patientId}/appointments`,
-          { headers: { 'assistant-token': token } }
+        const response = await api.get(
+          `/doctors/${doctorId}/patients/${patientId}/appointments`,
+          {  }
         );
         setAppointments(response.data || []);
       } catch (err) {

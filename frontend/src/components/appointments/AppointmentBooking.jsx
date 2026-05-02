@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { format, addDays, setHours, setMinutes, isBefore, isAfter, startOfToday } from 'date-fns';
@@ -90,7 +90,7 @@ const AppointmentBooking = ({ doctorId, onSuccess }) => {
     }
 
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${API_URL}/api/appointments`,
         {
           doctor_id: doctorId,

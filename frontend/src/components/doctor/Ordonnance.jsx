@@ -1,6 +1,6 @@
 // import React, { useState, useEffect } from 'react';
 // import { useParams } from 'react-router-dom';
-// import axios from 'axios';
+import api from '../../requests';
 // import { toast } from 'react-toastify';
 // import { 
 //   FiPrinter,
@@ -27,7 +27,7 @@
 
 //   const fetchDoctorInfo = async () => {
 //     try {
-//       const response = await axios.get('http://localhost:5000/api/doctors/profile', {
+//       const response = await api.get('/doctors/profile', {
 //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 //       });
 //       setDoctorInfo(response.data);
@@ -40,7 +40,7 @@
 
 //   const fetchPatientInfo = async () => {
 //     try {
-//       const response = await axios.get(`http://localhost:5000/api/appointments/${appointmentId}`, {
+//       const response = await api.get(`/appointments/${appointmentId}`, {
 //         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 //       });
 //       setPatientInfo(response.data);
@@ -52,7 +52,7 @@
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
 //     try {
-//       await axios.post(`http://localhost:5000/api/prescriptions`, {
+//       await api.post(`/prescriptions`, {
 //         appointmentId,
 //         prescription_text: prescription,
 //       }, {
@@ -369,7 +369,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import { 
   FiPrinter,
@@ -401,7 +401,7 @@ const Ordonnance = () => {
 
   const fetchDoctorInfo = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/doctors/profile', {
+      const response = await api.get('/doctors/profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setDoctorInfo(response.data);
@@ -414,7 +414,7 @@ const Ordonnance = () => {
 
   const fetchPatientInfo = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/appointments/${appointmentId}`, {
+      const response = await api.get(`/appointments/${appointmentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setPatientInfo(response.data);
@@ -427,7 +427,7 @@ const Ordonnance = () => {
     e.preventDefault();
     try {
       const prescriptionText = generatePrescriptionText();
-      await axios.post(`http://localhost:5000/api/prescriptions`, {
+      await api.post(`/prescriptions`, {
         appointmentId,
         prescription_text: prescriptionText,
       }, {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaEnvelope, FaSpinner } from 'react-icons/fa';
@@ -21,8 +21,11 @@ const AssistantRegister = () => {
     setLoading(true);
     try {
       const doctorToken = localStorage.getItem('doctorToken');
-      await axios.post('http://localhost:5000/api/assistants/register', form, {
-        headers: { 'doctor-token': doctorToken }
+      await api.post('/register', {
+        ...form,
+        first_name: form.firstName,
+        last_name: form.lastName,
+        role: 'assistant'
       });
       toast.success('Assistant registered successfully!');
       navigate('/doctor/assistants');

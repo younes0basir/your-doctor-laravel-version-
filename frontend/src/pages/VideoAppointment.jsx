@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../requests';
 import { toast } from 'react-toastify';
 import VideoCall from '../components/video/VideoCall';
 
@@ -16,7 +16,7 @@ const VideoAppointment = () => {
 
   const fetchAppointmentDetails = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/appointments/${appointmentId}`, {
+      const response = await api.get(`/appointments/${appointmentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       

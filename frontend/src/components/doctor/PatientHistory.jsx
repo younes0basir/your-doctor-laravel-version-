@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import DoctorSidebar from './DoctorSidebar';
-import axios from 'axios';
+import api from '../../requests';
 import { FiCalendar, FiUser, FiFileText, FiAlertCircle, FiLoader, FiSearch, FiMail, FiPhone } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -26,7 +26,7 @@ const PatientHistory = () => {
         // Get doctorId from profile endpoint
         let doctorId;
         try {
-          const profileRes = await axios.get('http://localhost:5000/api/doctors/profile', {
+          const profileRes = await api.get('/doctors/profile', {
             headers: { 'doctor-token': token }
           });
           doctorId = profileRes.data?.id;
@@ -36,8 +36,8 @@ const PatientHistory = () => {
         if (!doctorId) throw new Error('No doctor id found');
         
         // Fetch patient history for this doctor and patient
-        const res = await axios.get(
-          `http://localhost:5000/api/history/doctor/${doctorId}/patient/${patientId}/history`,
+        const res = await api.get(
+          `/history/doctor/${doctorId}/patient/${patientId}/history`,
           { headers: { 'doctor-token': token } }
         );
         

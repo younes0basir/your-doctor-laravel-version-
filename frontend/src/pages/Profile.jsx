@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
+import api from '../requests';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
@@ -35,7 +35,7 @@ const Profile = () => {
           setLoading(false);
           return;
         }
-        const res = await axios.get('http://localhost:5000/api/patients/profile', {
+        const res = await api.get('/patients/profile', {
           headers: { 'patient-token': token }
         });
         setPatient(res.data);
@@ -90,8 +90,8 @@ const Profile = () => {
     setSuccess('');
     try {
       const token = localStorage.getItem('patientToken');
-      const res = await axios.put(
-        'http://localhost:5000/api/patients/profile',
+      const res = await api.put(
+        '/patients/profile',
         {
           firstName: form.firstName,
           lastName: form.lastName,

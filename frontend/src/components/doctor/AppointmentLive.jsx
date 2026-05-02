@@ -3,7 +3,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { 
@@ -50,7 +50,7 @@ const AppointmentLive = () => {
   const fetchAppointmentDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/appointments/${appointmentId}`, {
+      const response = await api.get(`/appointments/${appointmentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAppointment(response.data);
@@ -66,9 +66,9 @@ const AppointmentLive = () => {
   const fetchPatientHistory = async () => {
     try {
       const doctorToken = localStorage.getItem('doctorToken');
-      const response = await axios.get(
+      const response = await api.get(
         `/api/doctor/patients/${appointment?.patientId}/history`,
-        { headers: { 'doctor-token': doctorToken } }
+        {  }
       );
       setPatientHistory(response.data);
       setLoading(false);
@@ -80,7 +80,7 @@ const AppointmentLive = () => {
 
   const fetchPatientVitals = async () => {
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `/api/patients/${appointment?.patientId}/vitals`,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
       );
@@ -97,7 +97,7 @@ const AppointmentLive = () => {
   const handleEndAppointment = async () => {
     try {
       setIsEnding(true);
-      await axios.put(`http://localhost:5000/api/appointments/${appointmentId}/end`, {}, {
+      await api.put(`/appointments/${appointmentId}/end`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       toast.success('Appointment completed successfully');

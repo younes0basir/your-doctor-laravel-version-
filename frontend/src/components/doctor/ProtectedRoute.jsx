@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../requests';
 
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
@@ -16,8 +16,8 @@ const ProtectedRoute = ({ children }) => {
         }
 
         // Verify token by making a request to the protected profile endpoint
-        await axios.get('http://localhost:5000/api/doctors/profile', {
-          headers: { 'doctor-token': doctorToken }
+        await api.get('/doctors/profile', {
+          
         });
         
         setIsLoading(false);

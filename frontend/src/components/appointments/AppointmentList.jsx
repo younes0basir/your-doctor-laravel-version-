@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '../../requests';
 
 const AppointmentList = ({ userId, userRole }) => {
   const [appointments, setAppointments] = useState([]);
@@ -23,7 +23,7 @@ const AppointmentList = ({ userId, userRole }) => {
         ? `/api/appointments/doctor/${userId}`
         : `/api/appointments/patient/${userId}`;
       
-      const response = await axios.get(
+      const response = await api.get(
         `${import.meta.env.VITE_API_URL}${endpoint}`,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -49,7 +49,7 @@ const AppointmentList = ({ userId, userRole }) => {
         throw new Error('No authentication token found');
       }
 
-      await axios.put(
+      await api.put(
         `${import.meta.env.VITE_API_URL}/api/appointments/${appointmentId}`,
         { status: newStatus },
         {
@@ -76,7 +76,7 @@ const AppointmentList = ({ userId, userRole }) => {
         throw new Error('No authentication token found');
       }
 
-      await axios.delete(
+      await api.delete(
         `${import.meta.env.VITE_API_URL}/api/appointments/${appointmentId}`,
         {
           headers: { Authorization: `Bearer ${token}` }

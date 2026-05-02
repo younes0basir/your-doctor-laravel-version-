@@ -44,9 +44,8 @@ const AdminAssistants = () => {
   const fetchAssistants = async () => {
     setLoading(true);
     try {
-      // Note: This endpoint may not exist in the backend yet
-      // Using a placeholder - you may need to create this endpoint
-      const res = await api.get('/assistants');
+      // Use the admin accounts endpoint with role filtering
+      const res = await api.get('/admin/accounts?role=assistant');
       setAssistants(res.data?.data || res.data || []);
     } catch (err) {
       console.error('Error fetching assistants:', err);
@@ -89,7 +88,7 @@ const AdminAssistants = () => {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await api.delete(`/assistants/${deleteId}`);
+      await api.delete(`/admin/accounts/${deleteId}`);
       setAssistants(assistants => assistants.filter(a => a.id !== deleteId));
       toast.success('Assistant deleted successfully');
     } catch {
@@ -119,7 +118,7 @@ const AdminAssistants = () => {
     e.preventDefault();
     try {
       await api.put(
-        `/assistants/${editId}`,
+        `/admin/accounts/${editId}`,
         editData
       );
       setAssistants(assistants =>
@@ -139,8 +138,8 @@ const AdminAssistants = () => {
     e.preventDefault();
     try {
       const res = await api.post(
-        '/assistants',
-        editData
+        '/admin/accounts',
+        { ...editData, role: 'assistant' }
       );
       setAssistants([...assistants, res.data]);
       toast.success('Assistant created successfully');

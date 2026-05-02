@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from '../doctor/DoctorSidebar';
 import { FiUserPlus, FiLogIn, FiUser, FiMail, FiTrash2, FiEdit } from 'react-icons/fi';
@@ -14,8 +14,8 @@ const ManageAssistant = () => {
     const fetchAssistants = async () => {
       try {
         const doctorToken = localStorage.getItem('doctorToken');
-        const res = await axios.get('http://localhost:5000/api/assistants/my', {
-          headers: { 'doctor-token': doctorToken }
+        const res = await api.get('/assistants/my', {
+          
         });
         setAssistants(res.data);
         setError(null);
@@ -33,8 +33,8 @@ const ManageAssistant = () => {
     if (window.confirm('Are you sure you want to remove this assistant?')) {
       try {
         const doctorToken = localStorage.getItem('doctorToken');
-        await axios.delete(`http://localhost:5000/api/assistants/${assistantId}`, {
-          headers: { 'doctor-token': doctorToken }
+        await api.delete(`/assistants/${assistantId}`, {
+          
         });
         setAssistants(assistants.filter(a => a.id !== assistantId));
       } catch (err) {

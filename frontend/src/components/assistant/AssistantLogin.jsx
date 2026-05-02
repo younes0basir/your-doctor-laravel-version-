@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AppContext } from '../../context/AppContext';
@@ -19,7 +19,7 @@ const AssistantLogin = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/assistants/login', form);
+      const res = await api.post('/login', form);
       localStorage.setItem('assistantToken', res.data.token);
       localStorage.setItem('assistant', JSON.stringify(res.data.assistant));
       setToken(res.data.token);

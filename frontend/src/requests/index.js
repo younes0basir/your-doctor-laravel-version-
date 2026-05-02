@@ -15,6 +15,7 @@ api.interceptors.request.use(
     // Try tokens in priority order
     const token = localStorage.getItem('adminToken') || 
                   localStorage.getItem('doctorToken') || 
+                  localStorage.getItem('assistantToken') ||
                   localStorage.getItem('patientToken');
                   
     if (token) {
@@ -37,6 +38,7 @@ api.interceptors.response.use(
       localStorage.removeItem('adminToken');
       localStorage.removeItem('patientToken');
       localStorage.removeItem('doctorToken');
+      localStorage.removeItem('assistantToken');
       localStorage.removeItem('userData');
       
       // Redirect to login unless already there

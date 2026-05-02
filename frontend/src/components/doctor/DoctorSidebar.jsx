@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import api from '../../requests';
 import { 
   FiHome,
   FiCalendar,
@@ -69,7 +69,7 @@ const DoctorSidebar = () => {
 
           // If doctorId is not in state (e.g., first load or refresh), try fetching from profile
           if (!doctorIdToUse) {
-            const profileRes = await axios.get('http://localhost:5000/api/doctors/profile', {
+            const profileRes = await api.get('/doctors/profile', {
               headers: { 'doctor-token': token }
             });
             doctorIdToUse = profileRes.data?.id; // Assuming doctor ID is 'id'
@@ -78,7 +78,7 @@ const DoctorSidebar = () => {
           }
 
           // Fetch patients assigned to this doctor
-          const res = await axios.get(`http://localhost:5000/api/patients/doctor/${doctorIdToUse}`, {
+          const res = await api.get(`/patients/doctor/${doctorIdToUse}`, {
             headers: { 'doctor-token': token }
           });
           setPatients(res.data || []);
@@ -104,8 +104,8 @@ const DoctorSidebar = () => {
       if (!currentDoctorId) throw new Error('Doctor ID not loaded. Please try again.');
       if (!createForm.patientId) throw new Error('Please select a patient');
 
-      await axios.post(
-        'http://localhost:5000/api/appointments',
+      await api.post(
+        '/appointments',
         {
           doctor_id: currentDoctorId,
           patient_id: createForm.patientId,
@@ -148,8 +148,8 @@ const DoctorSidebar = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
-      const res = await axios.get(
-        `http://localhost:5000/api/admin/patients?cin=${cinSearch}`,
+      const res = await api.get(
+        `/admin/patients?cin=${cinSearch}`,
         { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
       );
       const exactMatch = res.data.find(patient => patient.cin === cinSearch);
@@ -202,8 +202,8 @@ const DoctorSidebar = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found');
 
-      const res = await axios.post(
-        'http://localhost:5000/api/admin/patients',
+      const res = await api.post(
+        '/admin/patients',
         {
           ...newPatientForm,
           password: '', // Assuming password is not needed or handled by backend

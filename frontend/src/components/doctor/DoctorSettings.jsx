@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../requests';
 import { toast } from 'react-toastify';
 import { FiUser, FiMail, FiDollarSign, FiMapPin, FiHome, FiLock, FiCamera, FiCheck } from 'react-icons/fi';
 import DoctorSidebar from './DoctorSidebar';
@@ -33,7 +33,7 @@ const DoctorSettings = () => {
   useEffect(() => {
     const fetchSpecialties = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/doctors/specialities');
+        const response = await api.get('/doctors/specialities');
         setSpecialties(response.data);
       } catch (error) {
         console.error('Error fetching specialties:', error);
@@ -138,8 +138,8 @@ const DoctorSettings = () => {
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        'http://localhost:5000/api/doctors/upload-image',
+      const response = await api.post(
+        '/doctors/upload-image',
         formData,
         {
           headers: {
@@ -190,8 +190,8 @@ const DoctorSettings = () => {
         degree: formData.degree.trim(),
       };
 
-      const response = await axios.put(
-        'http://localhost:5000/api/doctors/profile',
+      const response = await api.put(
+        '/doctors/profile',
         updateData,
         {
           headers: { 
@@ -228,8 +228,8 @@ const DoctorSettings = () => {
     try {
       setIsChangingPassword(true);
       const token = localStorage.getItem('token');
-      await axios.put(
-        'http://localhost:5000/api/doctors/change-password',
+      await api.put(
+        '/doctors/change-password',
         {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword
