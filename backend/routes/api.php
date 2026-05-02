@@ -44,8 +44,13 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Appointments
     Route::apiResource('appointments', AppointmentController::class);
+    Route::get('/appointments/doctor/{doctorId}', [AppointmentController::class, 'doctorAppointments']);
     Route::patch('/appointments/{id}/status', [AppointmentController::class, 'updateStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
+    
+    // Doctor specific protected routes
+    Route::get('/doctors/profile', [DoctorController::class, 'profile']);
+    Route::get('/doctors/stats', [DoctorController::class, 'stats']);
 });
 
 // Admin routes

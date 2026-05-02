@@ -35,7 +35,7 @@ const DoctorAppointments = () => {
   useEffect(() => {
     const doctorData = JSON.parse(localStorage.getItem('doctor'));
     if (!doctorData || doctorData.role !== 'doctor') {
-      navigate('/doctor/login');
+      navigate('/login');
       return;
     }
     setDoctor(doctorData);
@@ -45,10 +45,7 @@ const DoctorAppointments = () => {
   const fetchAppointments = async (doctorId) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await api.get(`${BASE_URL}/appointments/doctor/${doctorId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get(`${BASE_URL}/appointments/doctor/${doctorId}`);
       setAppointments(response.data);
       setFilteredAppointments(response.data);
     } catch (error) {
@@ -122,14 +119,11 @@ const DoctorAppointments = () => {
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      const token = localStorage.getItem('token');
       const endpoint = newStatus === 'confirmed' 
         ? `${BASE_URL}/appointments/${appointmentId}/confirm`
         : `${BASE_URL}/appointments/${appointmentId}/cancel`;
 
-      await api.put(endpoint, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(endpoint, {});
 
       setAppointments(prev => prev.map(app => 
         app.id === appointmentId ? { ...app, status: newStatus } : app
@@ -148,13 +142,11 @@ const DoctorAppointments = () => {
   const handlePaymentStatusChange = async (appointmentId, currentStatus) => {
     try {
       setUpdatingPayment(appointmentId);
-      const token = localStorage.getItem('token');
       // Toggle payment status: if 'paid' -> 'unpaid', else 'paid'
       const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
       await api.put(
         `${BASE_URL}/appointments/${appointmentId}/payment-status`,
-        { payment_status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { payment_status: newStatus }
       );
       setAppointments(prev =>
         prev.map(app =>

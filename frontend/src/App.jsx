@@ -21,6 +21,10 @@ import DoctorSidebar from './components/doctor/DoctorSidebar';
 import DoctorDashboard from './components/doctor/DoctorDashboard';
 import DoctorAppointments from './components/doctor/DoctorAppointments';
 import DoctorPatients from './components/doctor/DoctorPatients';
+import AssistantDashboard from './components/assistant/AssistantDashboard';
+import AssistantAppointments from './components/assistant/AssistantAppointments';
+import AssistantPatients from './components/assistant/AssistantPatients';
+import AssistantManageQueue from './components/assistant/AssistantManageQueue';
 
 const App = () => {
   const location = useLocation();
@@ -51,13 +55,22 @@ const App = () => {
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Admin page not found</div>} />
             <Route index element={<AdminDashboard />} />
           </Route>
-          <Route path='/doctor/*' element={<DoctorSidebar />}>
+          <Route path='/doctor/*'>
             <Route path="dashboard" element={<DoctorDashboard />} />
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="patients" element={<DoctorPatients />} />
             {/* fallback for unknown doctor routes */}
             <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Doctor page not found</div>} />
             <Route index element={<DoctorDashboard />} />
+          </Route>
+          <Route path='/assistant/*'>
+            <Route path="dashboard" element={<AssistantDashboard />} />
+            <Route path="appointments" element={<AssistantAppointments />} />
+            <Route path="patients" element={<AssistantPatients />} />
+            <Route path="manage-queue" element={<AssistantManageQueue />} />
+            {/* fallback for unknown assistant routes */}
+            <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Assistant page not found</div>} />
+            <Route index element={<AssistantDashboard />} />
           </Route>
         </Routes>
       </div>

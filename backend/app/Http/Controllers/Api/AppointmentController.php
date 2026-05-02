@@ -124,6 +124,16 @@ class AppointmentController extends Controller
             ->orderBy('appointment_date', 'desc')
             ->get();
 
+    /**
+     * Get appointments for a specific doctor.
+     */
+    public function doctorAppointments(string $doctorId)
+    {
+        $appointments = Appointment::with(['patient', 'doctor.user'])
+            ->where('doctor_id', $doctorId)
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
         return response()->json($appointments);
     }
 }

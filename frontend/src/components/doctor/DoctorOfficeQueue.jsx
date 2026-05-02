@@ -65,7 +65,7 @@ const DoctorOfficeQueue = () => {
       
       if (!doctorData?.id) {
         toast.error('Doctor information not found');
-        navigate('/doctor/login');
+        navigate('/login');
         return;
       }
 

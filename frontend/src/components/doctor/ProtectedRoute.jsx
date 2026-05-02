@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children }) => {
       try {
         const doctorToken = localStorage.getItem('doctorToken');
         if (!doctorToken) {
-          navigate('/doctor/login');
+          navigate('/login');
           return;
         }
 
@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children }) => {
         // Clear doctor-specific data
         localStorage.removeItem('doctorToken');
         localStorage.removeItem('doctor');
-        navigate('/doctor/login');
+        navigate('/login');
       }
     };
 

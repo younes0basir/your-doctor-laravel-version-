@@ -157,4 +157,59 @@ class DoctorController extends Controller
 
         return response()->json($doctors);
     }
+
+    /**
+     * Get the authenticated doctor's profile.
+     */
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'doctor') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $doctor = Doctor::with('user')->where('user_id', $user->id)->firstOrFail();
+        return response()->json($doctor);
+    }
+
+    /**
+     * Get statistics for the authenticated doctor.
+     */
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'doctor') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+        
+        $today = now()->startOfDay();
+        $weekStart = now()->startOfWeek();
+
+        $appointments = Appointment::where('doctor_id', $doctor->id)->get();
+        
+        $todayCount = $appointments->filter(fn($a) => \Carbon\Carbon::parse($a->appointment_date)->isToday())->count();
+        $weekCount = $appointments->filter(fn($a) => \Carbon\Carbon::parse($a->appointment_date)->isAfter($weekStart))->count();
+        $totalPatients = $appointments->pluck('patient_id')->unique()->count();
+        
+        $pending = $appointments->where('status', 'pending')->count();
+        $completed = $appointments->where('status', 'completed')->count();
+
+        return response()->json([
+            'appointments' => [
+                'today' => $todayCount,
+                'week' => $weekCount,
+                'change' => 0 // Placeholder
+            ],
+            'patients' => [
+                'total' => $totalPatients,
+                'new' => 0 // Placeholder
+            ],
+            'tasks' => [
+                'pending' => $pending,
+                'completed' => $completed
+            ]
+        ]);
+    }
 }

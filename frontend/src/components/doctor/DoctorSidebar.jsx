@@ -49,10 +49,10 @@ const DoctorSidebar = () => {
   const [currentDoctorId, setCurrentDoctorId] = useState(localStorage.getItem('doctor'));
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('doctorToken');
     localStorage.removeItem('doctor');
     toast.success('Logged out successfully');
-    navigate('/portal');
+    navigate('/login');
   };
 
   // Fetch patients when create form is opened, and ensure doctorId is set
@@ -69,18 +69,14 @@ const DoctorSidebar = () => {
 
           // If doctorId is not in state (e.g., first load or refresh), try fetching from profile
           if (!doctorIdToUse) {
-            const profileRes = await api.get('/doctors/profile', {
-              headers: { 'doctor-token': token }
-            });
+            const profileRes = await api.get('/doctors/profile');
             doctorIdToUse = profileRes.data?.id; // Assuming doctor ID is 'id'
             if (!doctorIdToUse) throw new Error('No doctor ID found in profile');
             setCurrentDoctorId(doctorIdToUse); // Update state if fetched
           }
 
           // Fetch patients assigned to this doctor
-          const res = await api.get(`/patients/doctor/${doctorIdToUse}`, {
-            headers: { 'doctor-token': token }
-          });
+          const res = await api.get(`/patients/doctor/${doctorIdToUse}`);
           setPatients(res.data || []);
         } catch (err) {
           console.error("Failed to fetch doctor profile or patients:", err);

@@ -30,7 +30,7 @@ const DoctorLogin = () => {
       localStorage.removeItem('assistantToken');
       localStorage.removeItem('assistant');
 
-      const response = await api.post('/doctors/login', formData);
+      const response = await api.post('/login', formData);
       const { token, doctor, admin, assistant } = response.data;
 
       if (admin && (admin.role === 'admin' || admin.isAdmin)) {

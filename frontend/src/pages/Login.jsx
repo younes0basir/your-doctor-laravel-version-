@@ -21,23 +21,38 @@ const Login = () => {
     setLoading(true);
     
     try {
+      // Clear any existing session data
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('doctorToken');
+      localStorage.removeItem('assistantToken');
+      localStorage.removeItem('patientToken');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('admin');
+      localStorage.removeItem('doctor');
+      localStorage.removeItem('assistant');
+
       const response = await api.post('/login', {
         email: formData.email,
         password: formData.password,
       });
       
-      const { token, user } = response.data;
+      const { token, user, doctor, admin, assistant } = response.data;
       
-      // Store token based on user role
-      if (user.role === 'admin') {
+      // Store token and profile based on user role
+      if (user.role === 'admin' || admin) {
         localStorage.setItem('adminToken', token);
-      } else if (user.role === 'patient') {
-        localStorage.setItem('patientToken', token);
-      } else if (user.role === 'doctor') {
+        localStorage.setItem('admin', JSON.stringify(admin || user));
+      } else if (user.role === 'doctor' || doctor) {
         localStorage.setItem('doctorToken', token);
+        localStorage.setItem('doctor', JSON.stringify(doctor || user));
+      } else if (user.role === 'assistant' || assistant) {
+        localStorage.setItem('assistantToken', token);
+        localStorage.setItem('assistant', JSON.stringify(assistant || user));
+      } else {
+        localStorage.setItem('patientToken', token);
       }
       
-      // Also store user data for display
+      // Also store common user data
       localStorage.setItem('userData', JSON.stringify(user));
       
       toast.success('Connexion réussie!');
@@ -47,6 +62,8 @@ const Login = () => {
         navigate('/admin/dashboard');
       } else if (user.role === 'doctor') {
         navigate('/doctor/dashboard');
+      } else if (user.role === 'assistant') {
+        navigate('/assistant/dashboard');
       } else {
         navigate('/');
       }

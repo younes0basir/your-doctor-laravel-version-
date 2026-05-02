@@ -55,16 +55,14 @@ const DoctorDashboard = () => {
       try {
         const doctorToken = localStorage.getItem('doctorToken');
         if (!doctorToken) {
-          navigate('/doctor/login');
+          navigate('/login');
           return;
         }
 
         setLoading(true);
         const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
         // Only fetch stats from backend, not profile
-        const statsRes = await api.get(`/doctors/stats`, {
-          headers: { 'doctor-token': doctorToken }
-        });
+        const statsRes = await api.get(`/doctors/stats`);
         setStats(statsRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -86,9 +84,7 @@ const DoctorDashboard = () => {
         if (!doctorData || !doctorData.id) return;
         const token = localStorage.getItem('token');
         const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-        const res = await api.get(`/appointments/doctor/${doctorData.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get(`/appointments/doctor/${doctorData.id}`);
         setAppointments(res.data);
 
         // Calculate stats from appointments
@@ -327,7 +323,7 @@ const DoctorDashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                Welcome back, <span className="text-indigo-600">Dr. {doctor?.lastName || ''}</span>
+                Welcome back, <span className="text-indigo-600">Dr. {doctor?.user?.last_name || doctor?.lastName || ''}</span>
               </h1>
               <p className="text-gray-600 mt-1">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -491,7 +487,7 @@ const DoctorDashboard = () => {
                 <ProfileItem
                   icon={<FiUser className="text-gray-500" size={18} />}
                   label="Name"
-                  value={`Dr. ${doctor?.firstName || ''} ${doctor?.lastName || ''}`}
+                  value={`Dr. ${doctor?.user?.first_name || doctor?.firstName || ''} ${doctor?.user?.last_name || doctor?.lastName || ''}`}
                 />
                 <ProfileItem
                   icon={<FiMail className="text-gray-500" size={18} />}

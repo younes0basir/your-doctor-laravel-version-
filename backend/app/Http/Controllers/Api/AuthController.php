@@ -64,11 +64,20 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        $responseData = [
             'message' => 'Login successful',
             'user' => $user,
             'token' => $token,
-        ]);
+        ];
+
+        // Add role-specific data to match frontend expectations
+        if ($user->role === 'doctor') {
+            $responseData['doctor'] = $user->doctorProfile()->with('user')->first(); // Include user details
+        } elseif ($user->role === 'admin') {
+            $responseData['admin'] = $user;
+        }
+
+        return response()->json($responseData);
     }
 
     /**
