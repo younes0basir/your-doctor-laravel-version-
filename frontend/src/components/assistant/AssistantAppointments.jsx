@@ -89,8 +89,18 @@ const AssistantAppointments = () => {
         }
         
         const res = await api.get(`/appointments/doctor/${doctorId}`);
-        setAppointments(res.data || []);
-        setFilteredAppointments(res.data || []);
+        const appointmentsData = res.data?.data || res.data || [];
+        
+        // Map patient data if it's nested
+        const mappedData = appointmentsData.map(appt => ({
+          ...appt,
+          firstName: appt.patient?.first_name || appt.firstName || 'Unknown',
+          lastName: appt.patient?.last_name || appt.lastName || '',
+          email: appt.patient?.email || appt.email || 'No email'
+        }));
+
+        setAppointments(mappedData);
+        setFilteredAppointments(mappedData);
       } catch (err) {
         setError(err.message || 'Failed to fetch appointments');
         setAppointments([]);

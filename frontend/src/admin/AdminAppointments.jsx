@@ -56,6 +56,7 @@ const AdminAppointments = () => {
           first_name: appt.patient?.first_name || appt.patient_first_name || 'N/A',
           last_name: appt.patient?.last_name || appt.patient_last_name || '',
           full_name: appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : 'N/A',
+          email: appt.patient?.email || 'No email',
           phone: appt.patient?.phone || 'N/A'
         }
       }));
@@ -336,7 +337,10 @@ const AdminAppointments = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Doctor & Patient
+                      Patient
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Doctor
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date & Time
@@ -367,14 +371,22 @@ const AdminAppointments = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {appointment.doctor?.full_name}
+                                {appointment.patient?.full_name || 'N/A'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                <span className="inline-flex items-center">
-                                  <FiPhone className="mr-1" /> {appointment.patient?.phone || 'N/A'}
-                                </span>
+                                {appointment.patient?.email || 'No email'}
                               </div>
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            Dr. {appointment.doctor?.full_name || 'N/A'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <span className="inline-flex items-center">
+                              <FiPhone className="mr-1" /> {appointment.patient?.phone || 'N/A'}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
