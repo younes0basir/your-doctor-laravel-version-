@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './DoctorSidebar';
+import { useAuth } from '../../context/AuthContext';
 import {
   FiActivity,
   FiCalendar,
@@ -30,7 +31,8 @@ ChartJS.register(...registerables);
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
-  const [doctor, setDoctor] = useState(null);
+  const { user } = useAuth();
+  const doctor = user?.doctorProfile;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     appointments: { today: 0, week: 0, change: 0 },
@@ -38,40 +40,22 @@ const DoctorDashboard = () => {
     tasks: { pending: 0, completed: 0 }
   });
   const [error, setError] = useState(null);
-  const [specialization, setSpecialization] = useState('');
+  const specialization = doctor?.specialty || '';
   const [appointments, setAppointments] = useState([]);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
 
   useEffect(() => {
-    // Always use the latest doctor info from DoctorSettings (localStorage)
-    const localDoctor = localStorage.getItem('doctor');
-    if (localDoctor) {
-      const doc = JSON.parse(localDoctor);
-      setDoctor(doc);
-      setSpecialization(doc.specialization || '');
-    }
+    if (!doctor?.id) return;
 
     const fetchData = async () => {
       try {
-        const doctorToken = localStorage.getItem('doctorToken');
-        if (!doctorToken) {
-          navigate('/login');
-          return;
-        }
-
         setLoading(true);
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
         // Only fetch stats from backend, not profile
         const statsRes = await api.get(`/doctors/stats`);
         setStats(statsRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('');
-        setStats({
-          appointments: { today: 0, week: 0, change: 0 },
-          patients: { total: 0, new: 0 },
-          tasks: { pending: 0, completed: 0 }
-        });
       } finally {
         setLoading(false);
       }
@@ -80,11 +64,7 @@ const DoctorDashboard = () => {
     // Fetch appointments for stats
     const fetchAppointments = async () => {
       try {
-        const doctorData = JSON.parse(localStorage.getItem('doctor'));
-        if (!doctorData || !doctorData.id) return;
-        const token = localStorage.getItem('token');
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-        const res = await api.get(`/appointments/doctor/${doctorData.id}`);
+        const res = await api.get(`/appointments/doctor/${doctor.id}`);
         setAppointments(res.data);
 
         // Calculate stats from appointments
@@ -116,7 +96,7 @@ const DoctorDashboard = () => {
           appointments: {
             today: todayAppointments,
             week: weekAppointments,
-            change: 0 // You can implement week-over-week change if needed
+            change: 0 
           },
           patients: {
             total: totalPatients,
@@ -128,21 +108,13 @@ const DoctorDashboard = () => {
           }
         });
       } catch (error) {
-        // fallback to previous error logic
         setError('Failed to load dashboard data.');
-        setStats({
-          appointments: { today: 0, week: 0, change: 0 },
-          patients: { total: 0, new: 0 },
-          tasks: { pending: 0, completed: 0 }
-        });
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
     fetchAppointments();
-  }, [navigate]);
+  }, [doctor?.id]);
 
   // Chart data and options
   const appointmentsData = React.useMemo(() => {

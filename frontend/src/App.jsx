@@ -30,6 +30,7 @@ import AssistantPatients from './components/assistant/AssistantPatients';
 import AssistantManageQueue from './components/assistant/AssistantManageQueue';
 import MedicalRecords from './components/medical/MedicalRecords';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
   const location = useLocation();
@@ -53,37 +54,37 @@ const App = () => {
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
           
-          <Route path='/admin/*' element={<AdminSidebar />}>
+          <Route path='/admin/*' element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminSidebar />
+            </ProtectedRoute>
+          }>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminAccounts />} />
             <Route path="users/new" element={<AdminAccountCreate />} />
             <Route path="appointments" element={<AdminAppointments />} />
             <Route path="assistants" element={<AdminAssistants />} />
-            <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Admin page not found</div>} />
             <Route index element={<AdminDashboard />} />
+            <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Admin page not found</div>} />
           </Route>
 
-          <Route path='/doctor/*'>
-            <Route path="dashboard" element={<DoctorDashboard />} />
-            <Route path="appointments" element={<DoctorAppointments />} />
-            <Route path="patients" element={<DoctorPatients />} />
-            <Route path="assistants" element={<DoctorAssistants />} />
-            <Route path="settings" element={<DoctorSettings />} />
-            <Route path="office-queue" element={<DoctorOfficeQueue />} />
-            <Route path="medical-records/:patientId" element={<MedicalRecords />} />
-            <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Doctor page not found</div>} />
-            <Route index element={<DoctorDashboard />} />
-          </Route>
+          {/* Doctor Routes */}
+          <Route path='/doctor/dashboard' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
+          <Route path='/doctor/appointments' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAppointments /></ProtectedRoute>} />
+          <Route path='/doctor/patients' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorPatients /></ProtectedRoute>} />
+          <Route path='/doctor/assistants' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAssistants /></ProtectedRoute>} />
+          <Route path='/doctor/settings' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorSettings /></ProtectedRoute>} />
+          <Route path='/doctor/office-queue' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorOfficeQueue /></ProtectedRoute>} />
+          <Route path='/doctor/medical-records/:patientId' element={<ProtectedRoute allowedRoles={['doctor']}><MedicalRecords /></ProtectedRoute>} />
+          <Route path='/doctor' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
 
-          <Route path='/assistant/*'>
-            <Route path="dashboard" element={<AssistantDashboard />} />
-            <Route path="appointments" element={<AssistantAppointments />} />
-            <Route path="patients" element={<AssistantPatients />} />
-            <Route path="manage-queue" element={<AssistantManageQueue />} />
-            <Route path="medical-records/:patientId" element={<MedicalRecords />} />
-            <Route path="*" element={<div className="p-8 text-center text-red-600 text-xl font-bold">Assistant page not found</div>} />
-            <Route index element={<AssistantDashboard />} />
-          </Route>
+          {/* Assistant Routes */}
+          <Route path='/assistant/dashboard' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantDashboard /></ProtectedRoute>} />
+          <Route path='/assistant/appointments' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantAppointments /></ProtectedRoute>} />
+          <Route path='/assistant/patients' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantPatients /></ProtectedRoute>} />
+          <Route path='/assistant/manage-queue' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantManageQueue /></ProtectedRoute>} />
+          <Route path='/assistant/medical-records/:patientId' element={<ProtectedRoute allowedRoles={['assistant']}><MedicalRecords /></ProtectedRoute>} />
+          <Route path='/assistant' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantDashboard /></ProtectedRoute>} />
         </Routes>
       </div>
       {!isAdminRoute && !isDoctorRoute && !isAssistantRoute && <Footer />}

@@ -26,6 +26,7 @@ import {
   Cell
 } from 'recharts';
 import api from '../requests';
+import { useAuth } from '../context/AuthContext';
 
 // Mock data for static demo
 const MOCK_ACCOUNTS = [
@@ -57,6 +58,7 @@ const MOCK_REVENUE = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [accounts, setAccounts] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [stats, setStats] = useState({ revenue: [] });
@@ -336,7 +338,7 @@ const AdminDashboard = () => {
         {!loading && (
           <>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Welcome, {user?.first_name}</h1>
           <p className="text-gray-600">Key metrics and analytics for your clinic</p>
         </div>
 

@@ -1,9 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaSpinner } from 'react-icons/fa';
 import api from '../requests';
-import { AppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,7 @@ const Login = () => {
     password: '',
   });
   const navigate = useNavigate();
-  const { setToken, setUserData } = useContext(AppContext);
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -23,43 +23,18 @@ const Login = () => {
     setLoading(true);
     
     try {
-      // Clear any existing session data
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('doctorToken');
-      localStorage.removeItem('assistantToken');
-      localStorage.removeItem('patientToken');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('admin');
-      localStorage.removeItem('doctor');
-      localStorage.removeItem('assistant');
-
       const response = await api.post('/login', {
         email: formData.email,
         password: formData.password,
       });
       
-      const { token, user, doctor, admin, assistant } = response.data;
+      const { token, user, doctor } = response.data;
       
-      // Store token and profile based on user role
-      if (user.role === 'admin' || admin) {
-        localStorage.setItem('adminToken', token);
-        localStorage.setItem('admin', JSON.stringify(admin || user));
-      } else if (user.role === 'doctor' || doctor) {
-        localStorage.setItem('doctorToken', token);
-        localStorage.setItem('doctor', JSON.stringify(doctor || user));
-      } else if (user.role === 'assistant' || assistant) {
-        localStorage.setItem('assistantToken', token);
-        localStorage.setItem('assistant', JSON.stringify(assistant || user));
-      } else {
-        localStorage.setItem('patientToken', token);
-      }
+      // Update global context
+      const userData = { ...user };
+      if (doctor) userData.doctorProfile = doctor;
       
-      // Also store common user data
-      localStorage.setItem('userData', JSON.stringify(user));
-      
-      // Update global context state so navbar updates immediately
-      setToken(token);
-      setUserData(user);
+      login(token, userData);
       
       toast.success('Connexion réussie!');
       

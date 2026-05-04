@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../../requests';
 import { 
@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DoctorSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useContext(AppContext);
+  const { user, logout } = useAuth();
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
@@ -48,10 +48,8 @@ const DoctorSidebar = () => {
   });
   const [newPatientLoading, setNewPatientLoading] = useState(false);
   const [newPatientError, setNewPatientError] = useState('');
-  const [currentDoctorId, setCurrentDoctorId] = useState(() => {
-    const doc = localStorage.getItem('doctor');
-    return doc ? JSON.parse(doc).id : null;
-  });
+  
+  const currentDoctorId = user?.doctorProfile?.id || null;
 
   const handleLogout = () => {
     logout();
@@ -66,21 +64,10 @@ const DoctorSidebar = () => {
         setPatientsLoading(true);
         setError(null);
         try {
-          const token = localStorage.getItem('doctorToken');
-          if (!token) throw new Error('No authentication token found');
-
-          let doctorIdToUse = currentDoctorId; // Use state for doctor ID
-
-          // If doctorId is not in state (e.g., first load or refresh), try fetching from profile
-          if (!doctorIdToUse) {
-            const profileRes = await api.get('/doctors/profile');
-            doctorIdToUse = profileRes.data?.id; // Assuming doctor ID is 'id'
-            if (!doctorIdToUse) throw new Error('No doctor ID found in profile');
-            setCurrentDoctorId(doctorIdToUse); // Update state if fetched
-          }
+          if (!currentDoctorId) return;
 
           // Fetch patients assigned to this doctor
-          const res = await api.get(`/patients/doctor/${doctorIdToUse}`);
+          const res = await api.get(`/patients/doctor/${currentDoctorId}`);
           setPatients(res.data || []);
         } catch (err) {
           console.error("Failed to fetch doctor profile or patients:", err);

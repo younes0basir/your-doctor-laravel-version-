@@ -13,9 +13,12 @@ import {
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import DoctorSidebar from './DoctorSidebar';
+import { useAuth } from '../../context/AuthContext';
 
 const DoctorOfficeQueue = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const doctor = user?.doctorProfile;
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,16 +32,10 @@ const DoctorOfficeQueue = () => {
   }, []);
 
   const fetchQueue = async () => {
-    const doctorData = JSON.parse(localStorage.getItem('doctor'));
-
-    if (!doctorData) {
-      toast.error('Session expirée');
-      navigate('/login');
-      return;
-    }
+    if (!doctor?.id) return;
 
     try {
-      const res = await api.get(`/appointments/queue/${doctorData.id}`);
+      const res = await api.get(`/appointments/queue/${doctor.id}`);
       setQueue(res.data || []);
       setError(null);
     } catch (err) {
@@ -50,14 +47,14 @@ const DoctorOfficeQueue = () => {
   };
 
   useEffect(() => {
-    fetchQueue();
+    if (doctor?.id) fetchQueue();
     // Poll every 15 seconds to automatically fetch new arrivals
     const interval = setInterval(() => {
-      fetchQueue();
+      if (doctor?.id) fetchQueue();
     }, 15000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [doctor?.id]);
 
   const handleQueueAction = async (appointmentId, newStatus) => {
     setActionLoading(appointmentId);

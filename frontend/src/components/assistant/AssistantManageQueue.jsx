@@ -17,8 +17,10 @@ import {
   FiCalendar
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 
 const AssistantManageQueue = () => {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +41,6 @@ const AssistantManageQueue = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const profileRes = await api.get('/user');
-        const user = profileRes.data?.user || profileRes.data;
         const docId = user?.doctor_id;
         if (!docId) {
           setError('No doctor assigned to your account');
@@ -61,8 +61,8 @@ const AssistantManageQueue = () => {
         setLoading(false);
       }
     };
-    init();
-  }, []);
+    if (user) init();
+  }, [user]);
 
   useEffect(() => {
     if (!doctorId) return;

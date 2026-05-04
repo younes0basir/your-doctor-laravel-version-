@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 import { 
   FiActivity,
   FiCalendar,
@@ -15,9 +16,10 @@ import {
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
+    logout();
     toast.success('Logged out successfully');
     navigate('/login');
   };
@@ -63,7 +65,7 @@ const AdminSidebar = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">MediCarePro</h2>
-              <p className="text-xs text-white/80">Admin Panel</p>
+              <p className="text-xs text-white/80">Admin: {user?.first_name} {user?.last_name}</p>
             </div>
           </div>
         </div>

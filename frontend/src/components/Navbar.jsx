@@ -1,15 +1,22 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { assets } from '../assets/assets';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, userType, userData, logout } = useContext(AppContext);
+  const { user, token, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Map user data for the old variables
+  const userType = user?.role || null;
+  const userData = user ? { 
+    ...user, 
+    full_name: `${user.first_name} ${user.last_name}` 
+  } : null;
 
   useEffect(() => {
     const handleScroll = () => {

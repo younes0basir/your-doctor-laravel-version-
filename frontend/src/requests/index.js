@@ -12,8 +12,9 @@ const api = axios.create({
 // Add a request interceptor to attach the token automatically
 api.interceptors.request.use(
   (config) => {
-    // Try tokens in priority order
-    const token = localStorage.getItem('adminToken') || 
+    // Try the unified token first, then fall back to old keys for compatibility
+    const token = localStorage.getItem('token') ||
+                  localStorage.getItem('adminToken') || 
                   localStorage.getItem('doctorToken') || 
                   localStorage.getItem('assistantToken') ||
                   localStorage.getItem('patientToken');
@@ -35,11 +36,15 @@ api.interceptors.response.use(
       console.warn('401 Unauthorized - Clearing session and redirecting to login');
       
       // Clear all possible tokens and user data
+      localStorage.removeItem('token');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('patientToken');
       localStorage.removeItem('doctorToken');
       localStorage.removeItem('assistantToken');
       localStorage.removeItem('userData');
+      localStorage.removeItem('doctor');
+      localStorage.removeItem('admin');
+      localStorage.removeItem('assistant');
       
       // Redirect to login unless already there
       if (window.location.pathname !== '/login') {
