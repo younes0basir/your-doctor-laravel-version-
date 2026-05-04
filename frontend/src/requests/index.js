@@ -48,7 +48,7 @@ api.interceptors.response.use(
         localStorage.removeItem('doctor');
         localStorage.removeItem('admin');
         localStorage.removeItem('assistant');
-        
+         
         // Redirect to login unless already there
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
