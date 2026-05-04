@@ -139,7 +139,7 @@ const Appointment = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 transition-all hover:shadow-md">
             <div className="relative pt-[100%] bg-gradient-to-br from-gray-50 to-gray-100">
               <img
-                src={doctor.image_url || userIcon}
+                src={doctor.user?.image || userIcon}
                 alt={`Dr. ${doctor.user?.first_name || doctor.first_name} ${doctor.user?.last_name || doctor.last_name}`}
                 className="absolute top-0 left-0 w-full h-full object-cover"
                 onError={(e) => {

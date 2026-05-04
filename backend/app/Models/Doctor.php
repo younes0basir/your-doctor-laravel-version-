@@ -28,6 +28,7 @@ class Doctor extends Model
         'status',
         'profile_picture',
         'cabinet_logo',
+        'city',
     ];
 
     /**

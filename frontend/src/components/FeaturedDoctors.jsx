@@ -43,9 +43,9 @@ const FeaturedDoctors = () => {
                     full_name: doctor.user?.full_name || `${doctor.user?.first_name || ''} ${doctor.user?.last_name || ''}`.trim(),
                     specialityName: doctor.specialty || 'Médecin généraliste',
                     speciality_id: null, // Will be mapped if needed
-                    image_url: doctor.user?.profile_image || assets.group_profiles,
+                    image_url: doctor.user?.image || assets.group_profiles,
                     qualification: doctor.education || 'Médecin spécialiste',
-                    location: doctor.city || 'Clinique principale',
+                    location: doctor.city || 'Casablanca',
                     experience_years: doctor.experience_years || 0,
                     consultation_fee: doctor.consultation_fee || 0,
                     rating: (Math.random() * 1 + 4).toFixed(1) // Simulate rating for demo

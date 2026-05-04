@@ -241,7 +241,7 @@ const ListOfDoctors = () => {
                 >
                   <div className="relative pt-[75%] bg-gray-100">
                     <img
-                      src={doctor.user?.profile_image || userIcon}
+                      src={doctor.user?.image || userIcon}
                       alt={`Dr. ${doctor.user?.full_name || 'Médecin'}`}
                       className="absolute top-0 left-0 w-full h-full object-cover"
                       onError={(e) => {
