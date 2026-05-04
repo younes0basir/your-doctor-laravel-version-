@@ -25,6 +25,9 @@ class Appointment extends Model
         'notes',
         'amount',
         'payment_status',
+        'queue_status',
+        'arrival_time',
+        'consultation_start_time',
     ];
 
     /**
@@ -36,6 +39,8 @@ class Appointment extends Model
         'appointment_date' => 'date',
         'appointment_time' => 'datetime:H:i',
         'amount' => 'decimal:2',
+        'arrival_time' => 'datetime',
+        'consultation_start_time' => 'datetime',
     ];
 
     /**

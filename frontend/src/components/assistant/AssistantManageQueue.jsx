@@ -35,62 +35,68 @@ const AssistantManageQueue = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const fetchData = async () => {
+  // Separate initialization from periodic updates
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const profileRes = await api.get('/user');
+        const user = profileRes.data?.user || profileRes.data;
+        const docId = user?.doctor_id;
+        if (!docId) {
+          setError('No doctor assigned to your account');
+          setLoading(false);
+          return;
+        }
+        setDoctorId(docId);
+
+        const docRes = await api.get(`/doctors/by-user/${docId}`);
+        const doctorData = docRes.data?.doctor || docRes.data;
+        const docUser = doctorData?.user || doctorData;
+        setDoctorName(docUser?.first_name ? `Dr. ${docUser.first_name} ${docUser.last_name}` : `Dr. ${doctorData.firstName || ''} ${doctorData.lastName || ''}`);
+        
+        // Initial fetch
+        await fetchData(docId);
+      } catch (err) {
+        setError('Failed to initialize waiting room');
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (!doctorId) return;
+    const interval = setInterval(() => fetchData(doctorId), 10000); // Faster refresh (10s)
+    return () => clearInterval(interval);
+  }, [doctorId]);
+
+  const fetchData = async (requestedDocId = doctorId) => {
+    const targetDocId = requestedDocId;
+    if (!targetDocId) return;
     try {
       setRefreshing(true);
-      setError(null);
-      
-      const profileRes = await api.get('/user');
-      const user = profileRes.data?.user || profileRes.data;
-      const docId = user?.doctor_id;
-      setDoctorId(docId);
+      const today = new Date().toLocaleDateString('en-CA');
 
-      if (!docId) {
-        setError('No doctor assigned to your account');
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
+      const [apptsRes, queueRes] = await Promise.all([
+        api.get(`/appointments/doctor/${targetDocId}`),
+        api.get(`/appointments/queue/${targetDocId}`)
+      ]);
 
-      // Get doctor name
-      const docRes = await api.get(`/doctors/by-user/${docId}`);
-      const doctorData = docRes.data?.doctor || docRes.data;
-      const docUser = doctorData?.user || doctorData;
-      
-      if (docUser?.first_name) {
-        setDoctorName(`Dr. ${docUser.first_name} ${docUser.last_name}`);
-      } else {
-        setDoctorName(`Dr. ${doctorData.firstName || ''} ${doctorData.lastName || ''}`);
-      }
-
-      // Get today's appointments (to check in)
-      const apptsRes = await api.get(`/appointments/doctor/${docId}`);
-      // Filter for today's confirmed appointments that are not yet in queue
-      const today = new Date().toISOString().split('T')[0];
       const todayAppts = (apptsRes.data || []).filter(appt => {
-        const apptDate = appt.appointment_date.split(' ')[0];
+        const apptDate = appt.appointment_date.substring(0, 10);
         return apptDate === today && appt.status === 'confirmed' && !appt.queue_status;
       });
+
       setAppointments(todayAppts);
-
-      // Get current queue
-      const queueRes = await api.get(`/appointments/queue/${docId}`);
       setQueue(queueRes.data || []);
-
+      setError(null);
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load waiting room data');
+      console.error('Error refreshing data:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // Auto refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
 
   const handleCheckIn = async (appointmentId) => {
     setActionLoading(appointmentId);

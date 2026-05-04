@@ -167,23 +167,13 @@ const AssistantAppointments = () => {
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      const token = localStorage.getItem('assistantToken');
-      let endpoint;
-      if (newStatus === 'confirmed') {
-        endpoint = `/appointments/${appointmentId}/confirm`;
-      } else if (newStatus === 'canceled' || newStatus === 'cancelled') {
-        endpoint = `/appointments/${appointmentId}/cancel`;
-      } else {
-        return;
-      }
-      await api.put(endpoint, {}, {
-        
-      });
+      await api.patch(`/appointments/${appointmentId}/status`, { status: newStatus });
       setAppointments(prev =>
         prev.map(app =>
           app.id === appointmentId ? { ...app, status: newStatus } : app
         )
       );
+      toast.success(`Appointment ${newStatus}`);
     } catch (error) {
       toast.error('Failed to update appointment status');
     }
@@ -210,11 +200,9 @@ const AssistantAppointments = () => {
   const handlePaymentStatusChange = async (appointment, newStatus) => {
     setPaymentStatusLoading(prev => ({ ...prev, [appointment.id]: true }));
     try {
-      const token = localStorage.getItem('assistantToken');
-      await api.put(
+      await api.patch(
         `/appointments/${appointment.id}/payment-status`,
-        { payment_status: newStatus },
-        {  }
+        { payment_status: newStatus }
       );
       setAppointments(appts =>
         appts.map(a =>
