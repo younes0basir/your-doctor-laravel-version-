@@ -33,7 +33,6 @@ import MedicalRecords from './components/medical/MedicalRecords';
 import MyAppointments from './pages/MyAppointments';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import PrescriptionModule from './components/doctor/PrescriptionModule';
 
 const App = () => {
   const location = useLocation();
@@ -80,7 +79,6 @@ const App = () => {
           <Route path='/doctor/settings' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorSettings /></ProtectedRoute>} />
           <Route path='/doctor/office-queue' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorOfficeQueue /></ProtectedRoute>} />
           <Route path='/doctor/medical-records/:patientId' element={<ProtectedRoute allowedRoles={['doctor']}><MedicalRecords /></ProtectedRoute>} />
-          <Route path='/doctor/prescriptions' element={<ProtectedRoute allowedRoles={['doctor']}><PrescriptionModule /></ProtectedRoute>} />
           <Route path='/doctor' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
 
           {/* Assistant Routes */}

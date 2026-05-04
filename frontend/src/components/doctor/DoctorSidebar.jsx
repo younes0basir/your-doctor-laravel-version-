@@ -240,12 +240,6 @@ const DoctorSidebar = () => {
       name: 'Settings',
       icon: <FiSettings className="w-5 h-5" />,
       active: location.pathname === '/doctor/settings'
-    },
-    {
-      path: '/doctor/prescriptions',
-      name: 'Ordonnances',
-      icon: <FiFileText className="w-5 h-5" />,
-      active: location.pathname === '/doctor/prescriptions'
     }
   ];
 

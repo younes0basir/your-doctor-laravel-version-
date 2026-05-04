@@ -42,8 +42,9 @@ yarn-error.log
 /bootstrap/cache/*
 !/bootstrap/cache/.gitkeep
 
-# SQLite database
-
+/database/*.sqlite
+/database/*.sqlite-journal
+/database/database.sqlite
 
 # Backup files
 *.bak
