@@ -40,7 +40,8 @@ const MediAI = () => {
             const assistantMessage = { 
                 role: 'assistant', 
                 content: res.data.reply,
-                specialty: res.data.suggested_specialty 
+                specialty: res.data.suggested_specialty,
+                doctors: res.data.recommended_doctors
             };
             setChatHistory(prev => [...prev, assistantMessage]);
         } catch (err) {
@@ -116,24 +117,55 @@ const MediAI = () => {
                                             </div>
                                         </div>
                                         
-                                        {/* Specialty Recommendation Card */}
-                                        {msg.specialty && (
+                                        {/* Specialty & Doctor Recommendations */}
+                                        {(msg.specialty || (msg.doctors && msg.doctors.length > 0)) && (
                                             <motion.div 
                                                 initial={{ opacity: 0, scale: 0.9 }}
                                                 animate={{ opacity: 1, scale: 1 }}
-                                                className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl"
+                                                className="space-y-3"
                                             >
-                                                <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-2">Recommended Specialist</p>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-bold text-indigo-900">{msg.specialty}</span>
-                                                    <Link 
-                                                        to={`/doctors?specialty=${msg.specialty}`}
-                                                        onClick={() => setIsOpen(false)}
-                                                        className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
-                                                    >
-                                                        Find Doctors <FiArrowRight />
-                                                    </Link>
-                                                </div>
+                                                {msg.specialty && (
+                                                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl">
+                                                        <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mb-2">Recommended Specialist</p>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-bold text-indigo-900">{msg.specialty}</span>
+                                                            <Link 
+                                                                to={`/doctors?specialty=${msg.specialty}`}
+                                                                onClick={() => setIsOpen(false)}
+                                                                className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
+                                                            >
+                                                                All {msg.specialty}s <FiArrowRight />
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {msg.doctors && msg.doctors.length > 0 && (
+                                                    <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                                                        {msg.doctors.map(doc => (
+                                                            <div key={doc.id} className="min-w-[180px] bg-white border border-gray-100 p-3 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                                                                <div className="flex items-center gap-3 mb-3">
+                                                                    <img 
+                                                                        src={doc.image || 'https://via.placeholder.com/150'} 
+                                                                        alt={doc.name}
+                                                                        className="w-10 h-10 rounded-full object-cover bg-gray-100"
+                                                                    />
+                                                                    <div className="overflow-hidden">
+                                                                        <h4 className="text-xs font-bold text-gray-900 truncate">{doc.name}</h4>
+                                                                        <p className="text-[10px] text-gray-500">{doc.experience} exp.</p>
+                                                                    </div>
+                                                                </div>
+                                                                <Link 
+                                                                    to={`/appointment/${doc.id}`}
+                                                                    onClick={() => setIsOpen(false)}
+                                                                    className="w-full block text-center py-2 bg-[#ff5a5f]/10 text-[#ff5a5f] rounded-xl text-[10px] font-bold hover:bg-[#ff5a5f] hover:text-white transition-all"
+                                                                >
+                                                                    Book Now
+                                                                </Link>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </motion.div>
                                         )}
                                     </div>

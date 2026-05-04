@@ -27,18 +27,23 @@ class AiController extends Controller
             'Gastroenterology', 'Endocrinology'
         ];
 
-        $systemPrompt = "You are 'MediAI', a brilliant and empathetic medical assistant for the 'Your Doctor' platform.
+        $systemPrompt = "You are 'MediAI', a brilliant and empathetic medical assistant for 'Your Doctor'.
         Your goal is to help users understand their symptoms and guide them to the right medical specialty.
         
-        RULES:
-        1. Language: You MUST reply in the same language the user uses.
-        2. Brevity: Be EXTREMELY CONCISE. Use maximum 2-3 short sentences per answer. Avoid long explanations.
-        3. Disclaimer: Include a VERY SHORT disclaimer (e.g., 'AI Assistant - Not a diagnosis').
-        4. Analysis: Suggest the most likely medical specialty quickly.
-        5. Matching: Use ONLY these specialties: " . implode(', ', $specialties) . ".
-        6. Tone: Professional and direct.
+        SYMPTOM GUIDANCE:
+        - 'Rasi' = Head (Suggest Generalist or Neurology)
+        - 'Skhana' = Fever (Suggest Generalist or Pediatrics)
+        - 'Kerchi' = Stomach (Suggest Gastroenterology)
+        - 'Sadri' = Chest (Suggest Cardiology)
+        - 'Dahri' = Back (Suggest Orthopedics)
         
-        If the user mentions emergency symptoms, tell them to call emergency services immediately.";
+        RULES:
+        1. Language: Reply in the EXACT same language/dialect as the user (English, French, Arabic, or Darija).
+        2. Accuracy: Analyze symptoms carefully. Do NOT hallucinate symptoms the user didn't mention.
+        3. Brevity: Be concise (2-3 sentences).
+        4. Disclaimer: Include 'AI Assistant - Not a diagnosis'.
+        5. Matching: Use ONLY these specialties: " . implode(', ', $specialties) . ".
+        ";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt]
@@ -57,33 +62,63 @@ class AiController extends Controller
         // Add current message
         $messages[] = ['role' => 'user', 'content' => $request->message];
 
+        $startTime = microtime(true);
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type' => 'application/json',
-            ])->post($apiUrl, [
+            $response = Http::timeout(60)
+                ->withOptions(['verify' => false])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($apiUrl, [
                 'model' => $model,
                 'messages' => $messages,
-                'temperature' => 0.6,
+                'temperature' => 0.5,
                 'top_p' => 0.7,
-                'max_tokens' => 1024,
+                'max_tokens' => 256,
             ]);
+
+            $aiTime = microtime(true) - $startTime;
+            \Log::info("AI Response Time: " . $aiTime . "s");
 
             if ($response->successful()) {
                 $aiResponse = $response->json()['choices'][0]['message']['content'];
                 
+                $dbStartTime = microtime(true);
                 // Try to extract specialty if mentioned
                 $suggestedSpecialty = null;
                 foreach ($specialties as $specialty) {
-                    if (stripos($aiResponse, $specialty) !== false) {
+                    // Check if specialty is mentioned as a whole word (case insensitive)
+                    if (preg_match('/\b' . preg_quote($specialty, '/') . '\b/i', $aiResponse)) {
                         $suggestedSpecialty = $specialty;
                         break;
                     }
                 }
 
+                $recommendedDoctors = [];
+                if ($suggestedSpecialty) {
+                    $recommendedDoctors = Doctor::with('user')
+                        ->where('speciality', $suggestedSpecialty)
+                        ->where('status', 'approved')
+                        ->limit(3)
+                        ->get()
+                        ->map(function($doctor) {
+                            return [
+                                'id' => $doctor->id,
+                                'name' => 'Dr. ' . ($doctor->user->first_name ?? '') . ' ' . ($doctor->user->last_name ?? ''),
+                                'specialty' => $doctor->speciality,
+                                'image' => $doctor->image,
+                                'experience' => $doctor->experience,
+                                'fee' => $doctor->fees
+                            ];
+                        });
+                }
+                $dbTime = microtime(true) - $dbStartTime;
+                \Log::info("DB Query Time: " . $dbTime . "s");
+
                 return response()->json([
                     'reply' => $aiResponse,
-                    'suggested_specialty' => $suggestedSpecialty
+                    'suggested_specialty' => $suggestedSpecialty,
+                    'recommended_doctors' => $recommendedDoctors
                 ]);
             }
 
