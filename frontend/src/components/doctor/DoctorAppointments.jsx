@@ -307,8 +307,9 @@ const DoctorAppointments = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredAppointments.map((appointment) => {
-                      // Combine date and time for consistent display
-                      const fullDateTime = `${appointment.appointment_date}T${appointment.appointment_time || '09:00:00'}`;
+                      // Extract just the date part (YYYY-MM-DD) if it's a full ISO string
+                      const datePart = appointment.appointment_date.split('T')[0];
+                      const fullDateTime = `${datePart}T${appointment.appointment_time || '09:00:00'}`;
                       const { date, time } = formatDateTime(fullDateTime);
                       return (
                         <tr key={appointment.id} className="hover:bg-gray-50">
