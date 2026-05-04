@@ -20,13 +20,16 @@ class AiController extends Controller
         $model = env('NVIDIA_AI_MODEL', 'meta/llama-3.1-8b-instruct');
         $apiUrl = env('NVIDIA_AI_URL', 'https://integrate.api.nvidia.com/v1/chat/completions');
 
-        // Fetch specialties for context
-        $specialties = [
-            'Generalist', 'Cardiology', 'Dermatology', 'Pediatrics', 'Neurology', 
-            'Orthopedics', 'Psychiatry', 'Gynecology', 'Ophthalmology', 'Urology',
-            'Gastroenterology', 'Endocrinology'
-        ];
-
+        // Fetch actual specialties that have doctors
+        $specialties = Doctor::where('status', 'approved')
+            ->distinct()
+            ->pluck('specialty')
+            ->toArray();
+            
+        if (empty($specialties)) {
+            $specialties = ['Generalist']; // Fallback
+        }
+        
         // Language detection (Simple Arabic check)
         $isArabic = preg_match('/[\x{0600}-\x{06FF}]/u', $request->message);
         
@@ -61,7 +64,7 @@ class AiController extends Controller
                 ])->post($apiUrl, [
                 'model' => $model,
                 'messages' => $messages,
-                'temperature' => 0.1, // Faster and more precise
+                'temperature' => 0.1,
                 'top_p' => 0.7,
                 'max_tokens' => 256,
             ]);
@@ -76,7 +79,6 @@ class AiController extends Controller
                 // Try to extract specialty if mentioned
                 $suggestedSpecialty = null;
                 foreach ($specialties as $specialty) {
-                    // Check if specialty is mentioned as a whole word (case insensitive)
                     if (preg_match('/\b' . preg_quote($specialty, '/') . '\b/i', $aiResponse)) {
                         $suggestedSpecialty = $specialty;
                         break;
@@ -86,7 +88,7 @@ class AiController extends Controller
                 $recommendedDoctors = [];
                 if ($suggestedSpecialty) {
                     $recommendedDoctors = Doctor::with('user')
-                        ->where('speciality', $suggestedSpecialty)
+                        ->where('specialty', $suggestedSpecialty) // Corrected column name
                         ->where('status', 'approved')
                         ->limit(3)
                         ->get()
@@ -94,10 +96,10 @@ class AiController extends Controller
                             return [
                                 'id' => $doctor->id,
                                 'name' => 'Dr. ' . ($doctor->user->first_name ?? '') . ' ' . ($doctor->user->last_name ?? ''),
-                                'specialty' => $doctor->speciality,
-                                'image' => $doctor->image,
-                                'experience' => $doctor->experience,
-                                'fee' => $doctor->fees
+                                'specialty' => $doctor->specialty, // Corrected column name
+                                'image' => $doctor->profile_picture, // Corrected column name
+                                'experience' => $doctor->experience_years . ' years', // Corrected column name
+                                'fee' => $doctor->consultation_fee // Corrected column name
                             ];
                         });
                 }
