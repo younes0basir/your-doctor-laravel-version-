@@ -27,31 +27,20 @@ class AiController extends Controller
             'Gastroenterology', 'Endocrinology'
         ];
 
-        $systemPrompt = "You are 'MediAI', a brilliant and empathetic medical assistant for 'Your Doctor'.
-        Your goal is to help users understand their symptoms and guide them to the right medical specialty.
+        // Language detection (Simple Arabic check)
+        $isArabic = preg_match('/[\x{0600}-\x{06FF}]/u', $request->message);
         
-        SYMPTOM GUIDANCE:
-        - 'Rasi' = Head (Suggest Generalist or Neurology)
-        - 'Skhana' = Fever (Suggest Generalist or Pediatrics)
-        - 'Kerchi' = Stomach (Suggest Gastroenterology)
-        - 'Sadri' = Chest (Suggest Cardiology)
-        - 'Dahri' = Back (Suggest Orthopedics)
-        
-        RULES:
-        1. Language: Reply in the EXACT same language/dialect as the user (English, French, Arabic, or Darija).
-        2. Accuracy: Analyze symptoms carefully. Do NOT hallucinate symptoms the user didn't mention.
-        3. Brevity: Be concise (2-3 sentences).
-        4. Disclaimer: Include 'AI Assistant - Not a diagnosis'.
-        5. Matching: Use ONLY these specialties: " . implode(', ', $specialties) . ".
-        ";
+        $systemPrompt = $isArabic 
+            ? "أنت MediAI. أجب باختصار شديد (جملتين فقط). اقترح تخصصًا واحدًا فقط من: " . implode(', ', $specialties)
+            : "You are MediAI. Be extremely concise (max 2 sentences). Suggest ONLY one specialty from: " . implode(', ', $specialties) . ". Disclaimer: AI Assistant - Not a diagnosis.";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt]
         ];
 
-        // Add history if exists
+        // Add history (last 2 for speed)
         if ($request->history) {
-            foreach ($request->history as $msg) {
+            foreach (array_slice($request->history, -2) as $msg) {
                 $messages[] = [
                     'role' => $msg['role'],
                     'content' => $msg['content']
@@ -59,20 +48,20 @@ class AiController extends Controller
             }
         }
 
-        // Add current message
         $messages[] = ['role' => 'user', 'content' => $request->message];
 
         $startTime = microtime(true);
         try {
-            $response = Http::timeout(60)
+            $response = Http::timeout(30)
                 ->withOptions(['verify' => false])
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $apiKey,
                     'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
                 ])->post($apiUrl, [
                 'model' => $model,
                 'messages' => $messages,
-                'temperature' => 0.5,
+                'temperature' => 0.1, // Faster and more precise
                 'top_p' => 0.7,
                 'max_tokens' => 256,
             ]);
