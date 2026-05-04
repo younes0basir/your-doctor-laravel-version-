@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Doctor;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
@@ -132,13 +134,24 @@ class AppointmentController extends Controller
      */
     public function doctorAppointments(string $doctorId)
     {
-        // Handle User ID passed instead of Doctor Profile ID (common for assistant-side calls)
-        $doctorProfile = \App\Models\Doctor::where('user_id', $doctorId)->first();
-        $realDoctorId = $doctorProfile ? $doctorProfile->id : $doctorId;
+        // First, check if the provided ID is already a Doctor Profile ID
+        $doctorProfile = Doctor::find($doctorId);
+        
+        // If not found by ID, it might be a User ID (fallback for older frontend code or specific views)
+        if (!$doctorProfile) {
+            $doctorProfile = Doctor::where('user_id', $doctorId)->first();
+        }
+
+        if (!$doctorProfile) {
+            return response()->json([], 200); // No profile, no appointments
+        }
+
+        $realDoctorId = $doctorProfile->id;
 
         $appointments = Appointment::with(['patient', 'doctor.user'])
             ->where('doctor_id', $realDoctorId)
             ->orderBy('appointment_date', 'desc')
+            ->orderBy('appointment_time', 'desc')
             ->get();
 
         return response()->json($appointments);

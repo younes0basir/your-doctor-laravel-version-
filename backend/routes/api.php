@@ -67,6 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
     Route::get('/appointments/patient/{patientId}/history', [AppointmentController::class, 'patientHistory']);
 
+    // AI Booking (authenticated)
+    Route::post('/ai/book', [AiController::class, 'confirmBooking']);
+
     // Medical Records
     Route::apiResource('medical-records', \App\Http\Controllers\MedicalRecordController::class);
     Route::get('/medical-records/patient/{patientId}', [\App\Http\Controllers\MedicalRecordController::class, 'getByPatient']);
@@ -76,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/doctors/by-user/{userId}', [DoctorController::class, 'byUser']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 Route::get('/doctors/{doctorId}/availabilities', [DoctorController::class, 'publicAvailabilities']);
-Route::post('/ai/chat', [AiController::class, 'chat']);
+Route::post('/ai/chat', [AiController::class, 'chat']); // Auth checked internally for booking
 // Admin routes (Admin only)
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Dashboard & Statistics

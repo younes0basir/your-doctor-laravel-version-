@@ -33,22 +33,26 @@ api.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      console.warn('401 Unauthorized - Clearing session and redirecting to login');
-      
-      // Clear all possible tokens and user data
-      localStorage.removeItem('token');
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('patientToken');
-      localStorage.removeItem('doctorToken');
-      localStorage.removeItem('assistantToken');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('doctor');
-      localStorage.removeItem('admin');
-      localStorage.removeItem('assistant');
-      
-      // Redirect to login unless already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Don't redirect for AI chat routes (guests can use MediAI)
+      const isAiRoute = error.config?.url?.includes('/ai/');
+      if (!isAiRoute) {
+        console.warn('401 Unauthorized - Clearing session and redirecting to login');
+        
+        // Clear all possible tokens and user data
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('patientToken');
+        localStorage.removeItem('doctorToken');
+        localStorage.removeItem('assistantToken');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('doctor');
+        localStorage.removeItem('admin');
+        localStorage.removeItem('assistant');
+        
+        // Redirect to login unless already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

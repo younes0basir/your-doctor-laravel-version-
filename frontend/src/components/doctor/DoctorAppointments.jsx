@@ -307,7 +307,9 @@ const DoctorAppointments = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredAppointments.map((appointment) => {
-                      const { date, time } = formatDateTime(appointment.appointment_date);
+                      // Combine date and time for consistent display
+                      const fullDateTime = `${appointment.appointment_date}T${appointment.appointment_time || '09:00:00'}`;
+                      const { date, time } = formatDateTime(fullDateTime);
                       return (
                         <tr key={appointment.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
