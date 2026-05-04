@@ -12,6 +12,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(255) NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'patient' CHECK (role IN ('patient', 'doctor', 'admin', 'assistant')),
+    doctor_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
     image VARCHAR(255) NULL,
     date_of_birth DATE NULL,
