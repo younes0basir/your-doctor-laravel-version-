@@ -99,8 +99,13 @@ class AuthController extends Controller
      */
     public function user(Request $request)
     {
-        return response()->json([
-            'user' => $request->user(),
-        ]);
+        $user = $request->user();
+        $response = ['user' => $user];
+
+        if ($user->role === 'doctor') {
+            $response['doctor'] = $user->doctorProfile;
+        }
+
+        return response()->json($response);
     }
 }

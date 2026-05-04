@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MedicalRecord;
 use App\Models\Appointment;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class MedicalRecordController extends Controller
@@ -41,6 +42,7 @@ class MedicalRecordController extends Controller
             'vitals' => 'nullable|array',
         ]);
 
+        \Log::info("Saving Medical Record:", $validated);
         $record = MedicalRecord::create($validated);
 
         // If it's linked to an appointment, mark appointment as completed? 
