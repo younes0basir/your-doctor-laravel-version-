@@ -34,6 +34,7 @@ import MedicalRecords from './components/medical/MedicalRecords';
 import MyAppointments from './pages/MyAppointments';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import MediAI from './components/ai/MediAI';
 
 const App = () => {
   const location = useLocation();
@@ -94,6 +95,7 @@ const App = () => {
         </Routes>
       </div>
       {!isAdminRoute && !isDoctorRoute && !isAssistantRoute && <Footer />}
+      <MediAI />
     </div>
     </AuthProvider>
   )

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -75,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/doctors/by-user/{userId}', [DoctorController::class, 'byUser']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 Route::get('/doctors/{doctorId}/availabilities', [DoctorController::class, 'publicAvailabilities']);
+Route::post('/ai/chat', [AiController::class, 'chat']);
 // Admin routes (Admin only)
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Dashboard & Statistics
