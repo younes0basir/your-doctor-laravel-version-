@@ -1,314 +1,226 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
-import { 
-  FiCalendar, 
-  FiUser, 
-  FiVideo, 
-  FiMonitor, 
+import api from '../requests';
+import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FiCalendar,
   FiClock,
-  FiPhone,
-  FiX,
+  FiUser,
   FiLoader,
+  FiChevronRight,
+  FiMapPin,
   FiCheckCircle,
+  FiXCircle,
   FiAlertCircle
 } from 'react-icons/fi';
-import api from '../requests';
+
+const statusConfig = {
+  completed: { label: 'Terminé', color: 'bg-green-100 text-green-700 border-green-200', icon: FiCheckCircle, dot: 'bg-green-500' },
+  confirmed: { label: 'Confirmé', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: FiCheckCircle, dot: 'bg-blue-500' },
+  pending: { label: 'En attente', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: FiClock, dot: 'bg-amber-500' },
+  cancelled: { label: 'Annulé', color: 'bg-red-100 text-red-700 border-red-200', icon: FiXCircle, dot: 'bg-red-500' },
+};
 
 const MyAppointments = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchAppointments();
   }, []);
 
   const fetchAppointments = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Fetching patient appointments...');
-      
-      // The token is automatically attached by the api interceptor
-      const response = await api.get('/my-appointments');
-      
-      console.log('Appointments response:', response.data);
-      
-      // Ensure we have an array and IDs are strings
-      const appointmentsData = response.data.data || response.data;
-      const formattedAppointments = Array.isArray(appointmentsData) 
-        ? appointmentsData.map(appt => ({
-            ...appt,
-            id: appt.id?.toString() || Math.random().toString(36).substring(2, 9)
-          }))
-        : [];
-      
-      setAppointments(formattedAppointments);
-      console.log('Loaded', formattedAppointments.length, 'appointments');
+      const res = await api.get('/my-appointments');
+      setAppointments(res.data || []);
     } catch (err) {
       console.error('Error fetching appointments:', err);
-      if (err.response?.status === 401) {
-        toast.error('Session expirée. Veuillez vous reconnecter');
-        navigate('/login');
-      } else {
-        setError('Échec du chargement des rendez-vous');
-        toast.error('Erreur lors du chargement des rendez-vous');
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = async (appointmentId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous?')) {
-      return;
-    }
+  const filtered = filter === 'all'
+    ? appointments
+    : appointments.filter(a => a.status === filter);
 
-    try {
-      console.log('Cancelling appointment:', appointmentId);
-      
-      // The token is automatically attached by the api interceptor
-      await api.put(`/appointments/${appointmentId}/status`, {
-        status: 'cancelled'
-      });
+  const upcoming = appointments.filter(a =>
+    ['pending', 'confirmed'].includes(a.status) &&
+    new Date(a.appointment_date) >= new Date(new Date().toDateString())
+  );
 
-      setAppointments(prevAppointments =>
-        prevAppointments.map(appointment =>
-          appointment.id === appointmentId
-            ? { ...appointment, status: 'cancelled' }
-            : appointment
-        )
-      );
-
-      toast.success('Rendez-vous annulé avec succès');
-      console.log('Appointment cancelled successfully');
-    } catch (error) {
-      console.error('Error:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expirée. Veuillez vous reconnecter');
-        navigate('/login');
-      } else {
-        toast.error("Erreur lors de l'annulation du rendez-vous");
-      }
-    }
-  };
-
-  const canJoinVideoCall = (appointment) => {
-    return appointment.type === 'video' && 
-           appointment.status !== 'cancelled' && 
-           appointment.status !== 'completed';
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return <FiCheckCircle className="text-green-500" />;
-      case 'cancelled':
-        return <FiX className="text-red-500" />;
-      case 'completed':
-        return <FiCheckCircle className="text-gray-500" />;
-      default:
-        return <FiClock className="text-yellow-500" />;
-    }
+  const stats = {
+    total: appointments.length,
+    completed: appointments.filter(a => a.status === 'completed').length,
+    upcoming: upcoming.length,
+    cancelled: appointments.filter(a => a.status === 'cancelled').length,
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          Mes Rendez-vous
-        </h1>
-        <button 
-          onClick={() => navigate('/list-of-doctors')}
-          className="px-4 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-        >
-          Prendre un nouveau rendez-vous
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center items-center min-h-[300px]">
-          <div className="flex flex-col items-center gap-4">
-            <FiLoader className="animate-spin h-12 w-12 text-[#ff5a5f]" />
-            <p className="text-lg text-gray-600">Chargement de vos rendez-vous...</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
-          <div className="flex items-center">
-            <FiAlertCircle className="h-6 w-6 text-red-500 mr-4" />
-            <div>
-              <h3 className="text-lg font-medium text-red-800">Erreur de chargement</h3>
-              <p className="mt-1 text-gray-600">
-                Nous n'avons pas pu charger vos rendez-vous. Veuillez réessayer.
-              </p>
-              <button
-                onClick={fetchAppointments}
-                className="mt-4 px-4 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-              >
-                Réessayer
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : appointments.length === 0 ? (
-        <div className="bg-white p-8 rounded-xl shadow-sm text-center">
-          <FiCalendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800">Aucun rendez-vous trouvé</h3>
-          <p className="mt-2 text-gray-600 mb-6">
-            Vous n'avez pas encore pris de rendez-vous.
+    <div className="min-h-screen bg-gray-50 pt-24 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Mes Rendez-vous</h1>
+          <p className="text-gray-500 mt-1">
+            Bonjour {user?.first_name}, voici l'historique de vos consultations.
           </p>
-          <button
-            onClick={() => navigate('/list-of-doctors')}
-            className="px-6 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-          >
-            Trouver un médecin
-          </button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {appointments.map((appointment) => (
-            <div 
-              key={appointment.id} 
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-green-100 p-4 shadow-sm">
+            <p className="text-xs font-semibold text-green-500 uppercase tracking-wider">Terminés</p>
+            <p className="text-2xl font-bold text-green-700 mt-1">{stats.completed}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-blue-100 p-4 shadow-sm">
+            <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider">À venir</p>
+            <p className="text-2xl font-bold text-blue-700 mt-1">{stats.upcoming}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-red-100 p-4 shadow-sm">
+            <p className="text-xs font-semibold text-red-500 uppercase tracking-wider">Annulés</p>
+            <p className="text-2xl font-bold text-red-700 mt-1">{stats.cancelled}</p>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {[
+            { key: 'all', label: 'Tous' },
+            { key: 'pending', label: 'En attente' },
+            { key: 'confirmed', label: 'Confirmés' },
+            { key: 'completed', label: 'Terminés' },
+            { key: 'cancelled', label: 'Annulés' },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                filter === tab.key
+                  ? 'bg-[#ff5a5f] text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-[#ff5a5f] hover:text-[#ff5a5f]'
+              }`}
             >
-              {/* Appointment Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    {getStatusIcon(appointment.status)}
-                    <span className={`ml-2 font-medium ${
-                      appointment.status === 'cancelled' ? 'text-red-600' :
-                      appointment.status === 'completed' ? 'text-gray-600' :
-                      appointment.status === 'confirmed' ? 'text-green-600' :
-                      'text-yellow-600'
-                    }`}>
-                      {appointment.status === 'cancelled' ? 'Annulé' :
-                       appointment.status === 'completed' ? 'Terminé' :
-                       appointment.status === 'confirmed' ? 'Confirmé' :
-                       'En attente'}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    Réf: {appointment.id.toString().slice(0, 8)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Appointment Body */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Doctor Info */}
-                  <div className="flex items-start">
-                    <div className="bg-[#ff5a5f]/10 p-3 rounded-lg mr-4">
-                      <FiUser className="text-[#ff5a5f] w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Médecin</h3>
-                      <p className="text-lg font-semibold text-gray-800 mt-1">
-                        Dr. {appointment.doctor_firstName} {appointment.doctor_lastName}
-                      </p>
-                      <p className="text-gray-600 mt-1">
-                        {appointment.doctor_speciality || 'Généraliste'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Appointment Details */}
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <div className="bg-[#ff5a5f]/10 p-3 rounded-lg mr-4">
-                        <FiCalendar className="text-[#ff5a5f] w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Date & Heure</h3>
-                        <p className="text-lg font-semibold text-gray-800 mt-1">
-                          {format(parseISO(appointment.appointment_date), "EEEE d MMMM yyyy")}
-                        </p>
-                        <p className="text-gray-600">
-                          à {format(parseISO(appointment.appointment_date), "HH:mm")}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start">
-                      <div className="bg-[#ff5a5f]/10 p-3 rounded-lg mr-4">
-                        {appointment.type === 'video' ? (
-                          <FiVideo className="text-[#ff5a5f] w-5 h-5" />
-                        ) : (
-                          <FiMonitor className="text-[#ff5a5f] w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Type de consultation</h3>
-                        <p className="text-lg font-semibold text-gray-800 mt-1">
-                          {appointment.type === 'video' ? 'Téléconsultation' : 'Consultation en cabinet'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Status Badge Only */}
-                <div className="mt-4 flex items-center gap-4">
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    appointment.payment_status === 'paid'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    Statut de paiement : {appointment.payment_status === 'paid' ? 'Payé' : 'Non payé'}
-                  </span>
-                  {appointment.payment_status !== 'paid' && (
-                    <button
-                      className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
-                      onClick={() => navigate(`/payement/${appointment.id}`)}
-                    >
-                      Payer
-                    </button>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                  {canJoinVideoCall(appointment) && (
-                    <button
-                      onClick={() => navigate(`/video-appointment/${appointment.id}`)}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#ff7a7f] transition-colors"
-                    >
-                      <FiVideo className="w-5 h-5" />
-                      Rejoindre la téléconsultation
-                    </button>
-                  )}
-
-                  {appointment.status === 'pending' && (
-                    <button
-                      onClick={() => handleCancel(appointment.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                    >
-                      <FiX className="w-5 h-5" />
-                      Annuler le rendez-vous
-                    </button>
-                  )}
-
-                  {appointment.status === 'confirmed' && appointment.type !== 'video' && (
-                    <button
-                      onClick={() => navigate(`/doctor/${appointment.doctor_id}`)}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border border-[#ff5a5f] text-[#ff5a5f] rounded-lg hover:bg-[#ff5a5f]/10 transition-colors"
-                    >
-                      <FiPhone className="w-5 h-5" />
-                      Contacter le cabinet
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+              {tab.label}
+            </button>
           ))}
         </div>
-      )}
+
+        {/* Loading */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <FiLoader className="animate-spin h-10 w-10 text-[#ff5a5f] mb-4" />
+            <p className="text-gray-500">Chargement de vos rendez-vous...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+            <FiCalendar className="mx-auto h-14 w-14 text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-800">Aucun rendez-vous</h3>
+            <p className="text-gray-500 mt-1">
+              {filter === 'all'
+                ? "Vous n'avez pas encore de rendez-vous."
+                : "Aucun rendez-vous avec ce statut."
+              }
+            </p>
+            <button
+              onClick={() => navigate('/doctors')}
+              className="mt-6 px-6 py-2.5 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#e04a50] transition-colors font-medium shadow-md"
+            >
+              Prendre un rendez-vous
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((appointment, index) => {
+              const config = statusConfig[appointment.status] || statusConfig.pending;
+              const StatusIcon = config.icon;
+              const appointmentDate = new Date(appointment.appointment_date);
+              const isToday = appointmentDate.toDateString() === new Date().toDateString();
+              const isPast = appointmentDate < new Date(new Date().toDateString());
+
+              return (
+                <motion.div
+                  key={appointment.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden ${
+                    isToday ? 'border-[#ff5a5f] ring-1 ring-[#ff5a5f]/20' : 'border-gray-100'
+                  }`}
+                >
+                  {isToday && (
+                    <div className="bg-[#ff5a5f] text-white text-xs font-bold px-4 py-1 text-center uppercase tracking-wider">
+                      Aujourd'hui
+                    </div>
+                  )}
+                  <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    {/* Left: Date + Doctor */}
+                    <div className="flex items-start gap-4 flex-1">
+                      {/* Date block */}
+                      <div className={`flex-shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center ${
+                        isPast && appointment.status !== 'completed' ? 'bg-gray-100' : 'bg-[#ff5a5f]/10'
+                      }`}>
+                        <span className={`text-xs font-bold uppercase ${
+                          isPast && appointment.status !== 'completed' ? 'text-gray-400' : 'text-[#ff5a5f]'
+                        }`}>
+                          {appointmentDate.toLocaleDateString('fr-FR', { month: 'short' })}
+                        </span>
+                        <span className={`text-xl font-bold ${
+                          isPast && appointment.status !== 'completed' ? 'text-gray-500' : 'text-gray-900'
+                        }`}>
+                          {appointmentDate.getDate()}
+                        </span>
+                      </div>
+
+                      {/* Details */}
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          Dr. {appointment.doctor?.user?.first_name} {appointment.doctor?.user?.last_name}
+                        </p>
+                        {appointment.doctor?.specialty && (
+                          <p className="text-xs text-gray-500 mt-0.5">{appointment.doctor.specialty}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <FiClock size={12} />
+                            {appointment.appointment_time}
+                          </span>
+                          <span className="flex items-center gap-1 capitalize">
+                            <FiAlertCircle size={12} />
+                            {appointment.type}
+                          </span>
+                        </div>
+                        {appointment.reason && (
+                          <p className="text-xs text-gray-400 mt-1.5 italic line-clamp-1">
+                            « {appointment.reason} »
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Status */}
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${config.color}`}>
+                        <StatusIcon size={14} />
+                        {config.label}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

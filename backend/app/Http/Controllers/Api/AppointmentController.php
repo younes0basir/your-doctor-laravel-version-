@@ -257,4 +257,17 @@ class AppointmentController extends Controller
             'appointment' => $appointment,
         ]);
     }
+
+    /**
+     * Get appointment history for a specific patient.
+     */
+    public function patientHistory(Request $request, string $patientId)
+    {
+        $appointments = Appointment::with(['doctor.user'])
+            ->where('patient_id', $patientId)
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        return response()->json($appointments);
+    }
 }

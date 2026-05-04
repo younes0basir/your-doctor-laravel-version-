@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/appointments/{id}/queue', [AppointmentController::class, 'updateQueueStatus']);
     Route::patch('/appointments/{id}/payment-status', [AppointmentController::class, 'updatePaymentStatus']);
     Route::get('/my-appointments', [AppointmentController::class, 'myAppointments']);
+    Route::get('/appointments/patient/{patientId}/history', [AppointmentController::class, 'patientHistory']);
 
     // Medical Records
     Route::apiResource('medical-records', \App\Http\Controllers\MedicalRecordController::class);

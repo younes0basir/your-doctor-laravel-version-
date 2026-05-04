@@ -36,6 +36,9 @@ const MedicalRecords = () => {
   const [patientInfo, setPatientInfo] = useState(null);
   const [isEditingAge, setIsEditingAge] = useState(false);
   const [tempAge, setTempAge] = useState('');
+  const [activeTab, setActiveTab] = useState('records');
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -59,8 +62,21 @@ const MedicalRecords = () => {
     if (patientId) {
       fetchPatientInfo();
       fetchRecords();
+      fetchAppointmentHistory();
     }
   }, [patientId]);
+
+  const fetchAppointmentHistory = async () => {
+    setAppointmentsLoading(true);
+    try {
+      const res = await api.get(`/appointments/patient/${patientId}/history`);
+      setAppointments(res.data || []);
+    } catch (err) {
+      console.error('Error fetching appointment history:', err);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  };
 
   const fetchPatientInfo = async () => {
     try {
@@ -687,14 +703,45 @@ const MedicalRecords = () => {
               >
                 Back
               </button>
-              <button
-                onClick={() => { resetForm(); setSelectedRecord(null); setShowForm(true); }}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
-              >
-                <FiPlus className="mr-2" /> Add Record
-              </button>
+              {activeTab === 'records' && (
+                <button
+                  onClick={() => { resetForm(); setSelectedRecord(null); setShowForm(true); }}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
+                >
+                  <FiPlus className="mr-2" /> Add Record
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab('records')}
+              className={`pb-3 px-6 text-sm font-semibold transition-colors relative ${
+                activeTab === 'records' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Medical Records
+              {activeTab === 'records' && (
+                <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('appointments')}
+              className={`pb-3 px-6 text-sm font-semibold transition-colors relative ${
+                activeTab === 'appointments' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Appointment History
+              {activeTab === 'appointments' && (
+                <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+          </div>
+
+          {activeTab === 'records' ? (
+          <>
 
           {/* Search Bar */}
           <div className="mb-6 relative">
@@ -830,6 +877,64 @@ const MedicalRecords = () => {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          )}
+          </>
+          ) : (
+            /* Appointment History Tab */
+            <div className="space-y-4">
+              {appointmentsLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <FiLoader className="animate-spin h-10 w-10 text-blue-500" />
+                </div>
+              ) : appointments.length === 0 ? (
+                <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+                  <FiClock className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900">No appointment history</h3>
+                  <p className="text-gray-500">This patient hasn't had any appointments yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {appointments.map((appointment) => (
+                    <motion.div
+                      key={appointment.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                    >
+                      <div className="flex items-center">
+                        <div className={`p-3 rounded-full mr-4 ${
+                          appointment.status === 'completed' ? 'bg-green-50 text-green-600' :
+                          appointment.status === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                        }`}>
+                          <FiCalendar size={20} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">
+                            {new Date(appointment.appointment_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            <span className="mx-2 text-gray-300">|</span>
+                            {appointment.appointment_time}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            With Dr. {appointment.doctor?.user?.first_name} {appointment.doctor?.user?.last_name}
+                            {appointment.doctor?.specialty && ` (${appointment.doctor.specialty})`}
+                          </p>
+                          {appointment.reason && (
+                            <p className="text-xs text-gray-400 mt-1 italic">Reason: {appointment.reason}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        appointment.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        appointment.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                        appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {appointment.status}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
