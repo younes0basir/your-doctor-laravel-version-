@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctors/stats', [DoctorController::class, 'stats']);
     Route::get('/doctors/specialities', [DoctorController::class, 'specialities']);
     Route::post('/doctors/upload-image', [DoctorController::class, 'uploadImage']);
+    Route::post('/doctors/upload-logo', [DoctorController::class, 'uploadCabinetLogo']);
     Route::put('/doctors/change-password', [DoctorController::class, 'changePassword']);
     Route::get('/patients/doctor/{id}', [DoctorController::class, 'patients']);
     

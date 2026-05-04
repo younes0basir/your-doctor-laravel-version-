@@ -29,6 +29,7 @@ import AssistantAppointments from './components/assistant/AssistantAppointments'
 import AssistantPatients from './components/assistant/AssistantPatients';
 import AssistantManageQueue from './components/assistant/AssistantManageQueue';
 import MedicalRecords from './components/medical/MedicalRecords';
+import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
   const location = useLocation();
@@ -37,6 +38,7 @@ const App = () => {
   const isAssistantRoute = location.pathname.startsWith('/assistant/');
 
   return (
+    <AuthProvider>
     <div className='flex flex-col min-h-screen'>
       <ToastContainer />
       {/* Hide NavBar and Footer on admin/doctor/assistant pages */}
@@ -86,6 +88,7 @@ const App = () => {
       </div>
       {!isAdminRoute && !isDoctorRoute && !isAssistantRoute && <Footer />}
     </div>
+    </AuthProvider>
   )
 }
 

@@ -26,6 +26,8 @@ class Doctor extends Model
         'available_time_start',
         'available_time_end',
         'status',
+        'profile_picture',
+        'cabinet_logo',
     ];
 
     /**

@@ -302,7 +302,7 @@ class DoctorController extends Controller
     }
 
     /**
-     * Upload doctor image.
+     * Upload doctor profile image.
      */
     public function uploadImage(Request $request)
     {
@@ -315,12 +315,42 @@ class DoctorController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $path = $request->file('image')->store('profiles', 'public');
-        $imageUrl = url('storage/' . $path);
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
 
+        // Upload to Cloudinary
+        $result = $request->file('image')->storeOnCloudinary('doctor_profiles');
+        $imageUrl = $result->getSecurePath();
+
+        // Update both User image and Doctor profile_picture
         $user->update(['image' => $imageUrl]);
+        $doctor->update(['profile_picture' => $imageUrl]);
 
         return response()->json(['image_url' => $imageUrl]);
+    }
+
+    /**
+     * Upload cabinet logo.
+     */
+    public function uploadCabinetLogo(Request $request)
+    {
+        $request->validate([
+            'logo' => 'required|image|max:5120',
+        ]);
+
+        $user = $request->user();
+        if ($user->role !== 'doctor') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+
+        // Upload to Cloudinary
+        $result = $request->file('logo')->storeOnCloudinary('cabinet_logos');
+        $logoUrl = $result->getSecurePath();
+
+        $doctor->update(['cabinet_logo' => $logoUrl]);
+
+        return response()->json(['logo_url' => $logoUrl]);
     }
 
     /**

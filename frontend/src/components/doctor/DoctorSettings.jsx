@@ -17,6 +17,8 @@ const DoctorSettings = () => {
     newPassword: '',
     confirmPassword: '',
     image_url: '',
+    profile_picture: '',
+    cabinet_logo: '',
     speciality_id: '',
     experience_years: '',
     degree: '',
@@ -25,42 +27,64 @@ const DoctorSettings = () => {
   const [specialties, setSpecialties] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const fetchSpecialties = async () => {
+    try {
+      const response = await api.get('/doctors/specialities');
+      setSpecialties(response.data);
+    } catch (error) {
+      console.error('Error fetching specialties:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchSpecialties = async () => {
+    const fetchProfile = async () => {
       try {
-        const response = await api.get('/doctors/specialities');
-        setSpecialties(response.data);
+        const response = await api.get('/doctors/profile');
+        const doctor = response.data;
+        if (doctor) {
+          setFormData(prev => ({
+            ...prev,
+            firstName: doctor.user?.first_name || '',
+            lastName: doctor.user?.last_name || '',
+            email: doctor.user?.email || '',
+            specialty_description: doctor.about || '',
+            consultation_fee: doctor.consultation_fee?.toString() || '',
+            address: doctor.user?.address || '',
+            image_url: doctor.user?.image || doctor.profile_picture || '',
+            profile_picture: doctor.profile_picture || '',
+            cabinet_logo: doctor.cabinet_logo || '',
+            experience_years: doctor.experience_years?.toString() || '',
+            degree: doctor.education || '',
+            speciality_id: doctor.speciality_id?.toString() || '',
+            city: doctor.user?.city || '' // Assuming city might be on user
+          }));
+          
+          if (doctor.user?.image || doctor.profile_picture) {
+            setImagePreview(doctor.user?.image || doctor.profile_picture);
+          }
+          if (doctor.cabinet_logo) {
+            setLogoPreview(doctor.cabinet_logo);
+          }
+          
+          // Sync local storage just in case
+          localStorage.setItem('doctor', JSON.stringify(doctor));
+        }
       } catch (error) {
-        console.error('Error fetching specialties:', error);
+        console.error('Error fetching doctor profile:', error);
+        toast.error('Failed to load profile data');
       }
     };
 
+    fetchProfile();
     fetchSpecialties();
-  }, []);
-
-  useEffect(() => {
-    const doctor = JSON.parse(localStorage.getItem('doctor'));
-    if (doctor) {
-      setFormData(prev => ({
-        ...prev,
-        ...doctor,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-        consultation_fee: doctor.consultation_fee?.toString() || '',
-        experience_years: doctor.experience_years?.toString() || '',
-        degree: doctor.degree || '',
-        speciality_id: doctor.speciality_id?.toString() || ''
-      }));
-      if (doctor.image_url) {
-        setImagePreview(doctor.image_url);
-      }
-    }
   }, []);
 
   const moroccanCities = [
@@ -129,6 +153,22 @@ const DoctorSettings = () => {
     }
   };
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Logo size should be less than 5MB');
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+        toast.error('Only JPG, PNG or GIF images are allowed');
+        return;
+      }
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const uploadImage = async () => {
     if (!imageFile) return null;
     
@@ -137,23 +177,35 @@ const DoctorSettings = () => {
     
     try {
       setIsUploading(true);
-      const token = localStorage.getItem('token');
-      const response = await api.post(
-        '/doctors/upload-image',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.post('/doctors/upload-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       return response.data;
     } catch (error) {
       console.error('Image upload error:', error);
       throw error;
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const uploadLogo = async () => {
+    if (!logoFile) return null;
+    
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    
+    try {
+      setIsUploadingLogo(true);
+      const response = await api.post('/doctors/upload-logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      throw error;
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -169,11 +221,20 @@ const DoctorSettings = () => {
       if (imageFile) {
         try {
           const imageData = await uploadImage();
-          if (imageData) {
-            imageUrl = imageData.image_url;
-          }
+          if (imageData) imageUrl = imageData.image_url;
         } catch (error) {
-          toast.error('Failed to upload image. Profile update cancelled.');
+          toast.error('Failed to upload profile picture.');
+          return;
+        }
+      }
+
+      let logoUrl = formData.cabinet_logo;
+      if (logoFile) {
+        try {
+          const logoData = await uploadLogo();
+          if (logoData) logoUrl = logoData.logo_url;
+        } catch (error) {
+          toast.error('Failed to upload cabinet logo.');
           return;
         }
       }
@@ -186,6 +247,8 @@ const DoctorSettings = () => {
         city: formData.city,
         address: formData.address.trim(),
         image_url: imageUrl,
+        profile_picture: imageUrl,
+        cabinet_logo: logoUrl,
         experience_years: parseInt(formData.experience_years),
         degree: formData.degree.trim(),
       };
@@ -274,35 +337,74 @@ const DoctorSettings = () => {
               </div>
               
               <form onSubmit={handleProfileUpdate} className="space-y-6">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative group">
-                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-md">
-                      {imagePreview || formData.image_url ? (
-                        <img
-                          src={imagePreview || formData.image_url}
-                          alt="Profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <FiUser className="w-12 h-12 text-gray-400" />
-                        </div>
-                      )}
+                <div className="flex flex-col md:flex-row items-center justify-center gap-12">
+                  {/* Profile Image */}
+                  <div className="flex flex-col items-center space-y-2">
+                    <span className="text-sm font-medium text-gray-500">Profile Photo</span>
+                    <div className="relative group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-md">
+                        {imagePreview || formData.image_url ? (
+                          <img
+                            src={imagePreview || formData.image_url}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <FiUser className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <label
+                        htmlFor="profile-image"
+                        className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors group-hover:opacity-100"
+                        title="Change photo"
+                      >
+                        <FiCamera className="w-4 h-4" />
+                      </label>
+                      <input
+                        type="file"
+                        id="profile-image"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
                     </div>
-                    <label
-                      htmlFor="profile-image"
-                      className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors group-hover:opacity-100"
-                      title="Change photo"
-                    >
-                      <FiCamera className="w-4 h-4" />
-                    </label>
-                    <input
-                      type="file"
-                      id="profile-image"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
+                  </div>
+
+                  {/* Cabinet Logo */}
+                  <div className="flex flex-col items-center space-y-2">
+                    <span className="text-sm font-medium text-gray-500">Cabinet Logo</span>
+                    <div className="relative group">
+                      <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        {logoPreview ? (
+                          <img
+                            src={logoPreview}
+                            alt="Cabinet Logo"
+                            className="w-full h-full object-contain p-2"
+                          />
+                        ) : (
+                          <div className="text-center p-4">
+                            <FiHome className="mx-auto w-8 h-8 text-gray-300" />
+                            <span className="text-[10px] text-gray-400 mt-1 block uppercase">Logo</span>
+                          </div>
+                        )}
+                      </div>
+                      <label
+                        htmlFor="cabinet-logo"
+                        className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg"
+                        title="Upload Logo"
+                      >
+                        <FiCamera className="w-4 h-4" />
+                      </label>
+                      <input
+                        type="file"
+                        id="cabinet-logo"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        className="hidden"
+                      />
+                    </div>
                   </div>
                 </div>
 
