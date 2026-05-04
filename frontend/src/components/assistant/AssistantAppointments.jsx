@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import api from '../../requests';
 import { 
@@ -23,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AssistantSidebar from './AssistantSidebar';
 
 const AssistantAppointments = () => {
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
@@ -66,11 +68,7 @@ const AssistantAppointments = () => {
 
   useEffect(() => {
     const fetchAppointments = async () => {
-      const token = localStorage.getItem('assistantToken');
-      const userData = JSON.parse(localStorage.getItem('userData'));
-
-      if (!token || !userData || userData.role !== 'assistant') {
-        navigate('/login');
+      if (!token || user?.role !== 'assistant') {
         return;
       }
 
@@ -78,8 +76,6 @@ const AssistantAppointments = () => {
         setLoading(true);
         setError(null);
         
-        const profileRes = await api.get('/user');
-        const user = profileRes.data?.user || profileRes.data;
         const doctorId = user?.doctor_id;
         
         if (!doctorId) {
@@ -218,21 +214,12 @@ const AssistantAppointments = () => {
 
   // Fetch only doctor's patients when create form is opened
   useEffect(() => {
-    if (showCreateForm) {
+    if (showCreateForm && user?.doctor_id) {
       setPatientsLoading(true);
       const fetchPatients = async () => {
         try {
-          const token = localStorage.getItem('assistantToken');
-          // Get doctorId from assistant profile
-          const profileRes = await api.get('/user', {
-            
-          });
-          const doctorId = profileRes.data?.doctor_id;
-          if (!doctorId) throw new Error('No doctor assigned');
-          // Fetch only patients assigned to this doctor
-          const res = await api.get(`/patients/doctor/${doctorId}`, {
-            
-          });
+          const doctorId = user.doctor_id;
+          const res = await api.get(`/patients/doctor/${doctorId}`);
           setPatients(res.data || []);
         } catch {
           setPatients([]);
@@ -249,25 +236,16 @@ const AssistantAppointments = () => {
     setCreateLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('assistantToken');
-      // Get doctorId from assistant profile
-      const profileRes = await api.get('/user', {
-        
-      });
-      const doctorId = profileRes.data?.doctor_id;
+      const doctorId = user?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
       if (!createForm.patientId) throw new Error('Please select a patient');
 
-      await api.post(
-        '/appointments',
-        {
-          doctor_id: doctorId,
-          patient_id: createForm.patientId,
-          appointment_date: createForm.appointment_date,
-          type: createForm.type || 'General'
-        },
-        {  }
-      );
+      await api.post('/appointments', {
+        doctor_id: doctorId,
+        patient_id: createForm.patientId,
+        appointment_date: createForm.appointment_date,
+        type: createForm.type || 'General'
+      });
       setShowCreateForm(false);
       setCreateForm({ patientId: '', appointment_date: '', type: 'physical' });
       // Refresh appointments
@@ -296,12 +274,7 @@ const AssistantAppointments = () => {
     setEditLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('assistantToken');
-      // Get doctorId from assistant profile
-      const profileRes = await api.get('/user', {
-        
-      });
-      const doctorId = profileRes.data?.doctor_id;
+      const doctorId = user?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
 
       // Find appointment to get patient_id
@@ -309,17 +282,13 @@ const AssistantAppointments = () => {
       if (!appt) throw new Error('Appointment not found');
 
       // Update appointment
-      await api.put(
-        `/appointments/${editForm.id}`,
-        {
-          doctor_id: doctorId,
-          patient_id: appt.patient_id,
-          appointment_date: editForm.appointment_date,
-          type: editForm.type,
-          status: appt.status
-        },
-        {  }
-      );
+      await api.put(`/appointments/${editForm.id}`, {
+        doctor_id: doctorId,
+        patient_id: appt.patient_id,
+        appointment_date: editForm.appointment_date,
+        type: editForm.type,
+        status: appt.status
+      });
       setShowEditForm(false);
       setEditForm({ id: null, appointment_date: '', type: 'physical' });
       // Refresh appointments
@@ -361,11 +330,7 @@ const AssistantAppointments = () => {
     setCinResult(null);
     setNewPatientError('');
     try {
-      const token = localStorage.getItem('assistantToken');
-      const res = await api.get(
-        `/admin/patients?cin=${cinSearch}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get(`/admin/patients?cin=${cinSearch}`);
       // Find exact CIN match
       const exactMatch = res.data.find(patient => patient.cin === cinSearch);
       if (exactMatch) {
@@ -412,15 +377,10 @@ const AssistantAppointments = () => {
         setNewPatientLoading(false);
         return;
       }
-      const token = localStorage.getItem('assistantToken');
-      const res = await api.post(
-        '/admin/patients',
-        {
-          ...newPatientForm,
-          password: '',
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post('/admin/patients', {
+        ...newPatientForm,
+        password: '',
+      });
       setCreateForm(f => ({ ...f, patientId: res.data.id }));
       setShowNewPatient(false);
       setPatients(p => [...p, res.data]);

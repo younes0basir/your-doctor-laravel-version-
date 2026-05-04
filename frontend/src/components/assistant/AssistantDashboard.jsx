@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../../requests';
+import { toast } from 'react-toastify';
 import { 
   FiUser, 
   FiMail, 
@@ -18,10 +19,14 @@ import {
 } from 'react-icons/fi';
 import AssistantSidebar from './AssistantSidebar';
 import { AppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AssistantDashboard = () => {
-  const [assistant, setAssistant] = useState(null);
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [doctor, setDoctor] = useState(null);
   const [stats, setStats] = useState({
     appointments: 0,
@@ -29,9 +34,8 @@ const AssistantDashboard = () => {
     pending: 0
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // General error for dashboard
+  const [error, setError] = useState(null);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
-  const { setToken } = useContext(AppContext);
 
   // New Appointment Modal States
   const [patients, setPatients] = useState([]);
@@ -42,7 +46,7 @@ const AssistantDashboard = () => {
     type: 'physical'
   });
   const [createLoading, setCreateLoading] = useState(false);
-  const [createFormError, setCreateFormError] = useState(null); // Specific error for create form
+  const [createFormError, setCreateFormError] = useState(null);
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [cinSearch, setCinSearch] = useState('');
   const [cinSearching, setCinSearching] = useState(false);
@@ -60,24 +64,20 @@ const AssistantDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!token || user?.role !== 'assistant') return;
+
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem('assistantToken');
-        if (!token) throw new Error('Authentication required');
 
-        // Get assistant profile
-        const res = await api.get('/user');
-        const user = res.data?.user || res.data;
-        setAssistant(user);
-
+        // user is already available from useAuth
+        
         // Get doctor info if assigned
         const doctorId = user?.doctor_id;
         if (doctorId) {
           const docRes = await api.get(`/doctors/by-user/${doctorId}`);
           const doctorData = docRes.data?.doctor || docRes.data;
           
-          // Map to match the template expectations if needed
           const formattedDoctor = {
             ...doctorData,
             firstName: doctorData?.user?.first_name || doctorData?.firstName,
@@ -88,52 +88,41 @@ const AssistantDashboard = () => {
           
           setDoctor(formattedDoctor);
           
-          // Try to get stats, but don't fail if endpoint doesn't exist
           try {
-            const statsRes = await api.get(`/assistants/stats`, {
-              
-            });
+            const statsRes = await api.get(`/assistants/stats`);
             setStats(statsRes.data);
           } catch (statsError) {
-            console.log('Stats endpoint not available, using default values');
+            console.log('Stats endpoint not available');
           }
         }
       } catch (err) {
         setError(err.message || 'Failed to load dashboard data');
-        setAssistant(null);
-        setDoctor(null);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [user, token]);
 
   // Fetch doctor's patients when create form is opened
   useEffect(() => {
-    if (showNewAppointment && assistant?.doctor_id) {
+    if (showNewAppointment && user?.doctor_id) {
       setPatientsLoading(true);
       const fetchPatients = async () => {
         try {
-          const token = localStorage.getItem('assistantToken');
-          const doctorId = assistant.doctor_id; // Use doctor_id from assistant state
-          if (!token) throw new Error('No authentication token found');
-          if (!doctorId) throw new Error('No doctor assigned to assistant');
-          
-          const res = await api.get(`/patients/doctor/${doctorId}`, {
-            
-          });
+          const doctorId = user.doctor_id;
+          const res = await api.get(`/patients/doctor/${doctorId}`);
           setPatients(res.data || []);
         } catch(err) {
           setPatients([]);
-          setCreateFormError(err.message || 'Failed to load patients for appointment creation');
+          setCreateFormError(err.message || 'Failed to load patients');
         } finally {
           setPatientsLoading(false);
         }
       };
       fetchPatients();
     }
-  }, [showNewAppointment, assistant]); // Depend on assistant to ensure doctor_id is available
+  }, [showNewAppointment, user]); // Depend on user to ensure doctor_id is available
 
   const handleCreateAppointment = async (e) => {
     e.preventDefault();
@@ -190,12 +179,8 @@ const AssistantDashboard = () => {
     setCinResult(null);
     setNewPatientError('');
     try {
-      const token = localStorage.getItem('assistantToken');
-      if (!token) throw new Error('No authentication token found');
-
       const res = await api.get(
-        `/admin/patients?cin=${cinSearch}`,
-        { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
+        `/admin/patients?cin=${cinSearch}`
       );
       // Find exact CIN match
       const exactMatch = res.data.find(patient => patient.cin === cinSearch);
@@ -246,16 +231,12 @@ const AssistantDashboard = () => {
         setNewPatientLoading(false);
         return;
       }
-      const token = localStorage.getItem('assistantToken');
-      if (!token) throw new Error('No authentication token found');
-
       const res = await api.post(
         '/admin/patients',
         {
           ...newPatientForm,
           password: '', // Assuming password is not needed or handled by backend
-        },
-        { headers: { Authorization: `Bearer ${token}` } } // Assuming admin endpoint uses Bearer token
+        }
       );
       setCreateForm(f => ({ ...f, patientId: res.data.id }));
       setShowNewPatient(false);
@@ -277,7 +258,7 @@ const AssistantDashboard = () => {
     );
   }
 
-  if (error || !assistant) {
+  if (error || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
@@ -364,14 +345,14 @@ const AssistantDashboard = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-800">
-                      {assistant.firstName} {assistant.lastName}
+                      {user.first_name || user.firstName} {user.last_name || user.lastName}
                     </h3>
                     <div className="flex items-center text-gray-600 mt-1">
-                      <FiMail className="mr-2" /> {assistant.email}
+                      <FiMail className="mr-2" /> {user.email}
                     </div>
-                    {assistant.phoneNumber && (
+                    {(user.phone || user.phoneNumber) && (
                       <div className="flex items-center text-gray-600 mt-1">
-                        <FiPhone className="mr-2" /> {assistant.phoneNumber}
+                        <FiPhone className="mr-2" /> {user.phone || user.phoneNumber}
                       </div>
                     )}
                   </div>
@@ -439,12 +420,7 @@ const AssistantDashboard = () => {
               </button>
               <button 
                 className="bg-red-50 hover:bg-red-100 text-red-700 p-4 rounded-lg transition-colors flex flex-col items-center"
-                onClick={() => {
-                  localStorage.removeItem('assistantToken');
-                  localStorage.removeItem('assistant');
-                  if (setToken) setToken(null);
-                  window.location.href = '/assistant/login';
-                }}
+                onClick={logout}
               >
                 <FiLogOut className="h-6 w-6 mb-2" />
                 <span>Logout</span>

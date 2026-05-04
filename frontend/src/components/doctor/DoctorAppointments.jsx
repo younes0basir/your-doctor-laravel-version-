@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../requests';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { 
   FiCalendar, 
   FiClock, 
@@ -30,21 +31,18 @@ const DoctorAppointments = () => {
   const [refresh, setRefresh] = useState(false);
   const [updatingPayment, setUpdatingPayment] = useState(null);
 
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('doctorToken');
-    const userData = JSON.parse(localStorage.getItem('userData'));
-    
-    if (!token || !userData || userData.role !== 'doctor') {
-      navigate('/login');
+    if (!token || user?.role !== 'doctor') {
       return;
     }
     
-    const doctorData = JSON.parse(localStorage.getItem('doctor'));
-    setDoctor(doctorData || userData);
-    fetchAppointments(doctorData?.id || userData.id);
-  }, [navigate, refresh]);
+    const doctorData = user?.doctorProfile || user;
+    setDoctor(doctorData);
+    fetchAppointments(doctorData?.id);
+  }, [refresh, user, token]);
 
   const fetchAppointments = async (doctorId) => {
     try {

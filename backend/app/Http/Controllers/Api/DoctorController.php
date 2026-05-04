@@ -251,9 +251,18 @@ class DoctorController extends Controller
      */
     public function patients(string $id)
     {
-        $patients = User::whereHas('appointments', function ($query) use ($id) {
-            $query->where('doctor_id', $id);
-        })->get();
+        // $id is the doctors.id
+        $doctor = Doctor::findOrFail($id);
+        $doctorUserId = $doctor->user_id;
+
+        $patients = User::where('role', 'patient')
+        ->where(function($q) use ($id, $doctorUserId) {
+            $q->whereHas('appointments', function ($query) use ($id) {
+                $query->where('doctor_id', $id);
+            })
+            ->orWhere('doctor_id', $doctorUserId);
+        })
+        ->get();
 
         return response()->json($patients);
     }

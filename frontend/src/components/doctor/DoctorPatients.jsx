@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 import { 
   FiUser, 
   FiFileText, 
@@ -9,11 +10,13 @@ import {
   FiMail,
   FiCalendar,
   FiAlertCircle,
-  FiSearch
+  FiSearch,
+  FiLoader
 } from 'react-icons/fi';
 import DoctorSidebar from './DoctorSidebar';
 
 const DoctorPatients = () => {
+  const { user, token } = useAuth();
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,11 +26,7 @@ const DoctorPatients = () => {
 
   useEffect(() => {
     const fetchPatients = async () => {
-      const token = localStorage.getItem('doctorToken');
-      const userData = JSON.parse(localStorage.getItem('userData'));
-
-      if (!token || !userData || userData.role !== 'doctor') {
-        navigate('/login');
+      if (!token || user?.role !== 'doctor') {
         return;
       }
 

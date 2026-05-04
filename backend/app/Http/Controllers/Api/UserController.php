@@ -84,6 +84,7 @@ class UserController extends Controller
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'status' => 'sometimes|in:active,inactive,suspended',
+            'age' => 'sometimes|integer|min:0|max:150',
         ]);
 
         $data = $request->except('password');

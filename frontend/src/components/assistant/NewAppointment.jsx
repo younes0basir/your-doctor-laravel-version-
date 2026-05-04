@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiLoader, FiUserPlus, FiSearch } from 'react-icons/fi';
 import api from '../../requests';
+import { useAuth } from '../../context/AuthContext';
 
 const NewAppointment = ({ onClose }) => {
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     patientId: '',
@@ -35,19 +37,13 @@ const NewAppointment = ({ onClose }) => {
   useEffect(() => {
     // Fetch only doctor's patients
     const fetchPatients = async () => {
+      if (!token || !user?.doctor_id) {
+        return;
+      }
       setPatientsLoading(true);
       try {
-        const token = localStorage.getItem('assistantToken');
-        // Get doctorId from assistant profile
-        const profileRes = await api.get('/user', {
-          
-        });
-        const doctorId = profileRes.data?.doctor_id;
-        if (!doctorId) throw new Error('No doctor assigned');
-        // Fetch only patients assigned to this doctor
-        const res = await api.get(`/patients/doctor/${doctorId}`, {
-          
-        });
+        const doctorId = user.doctor_id;
+        const res = await api.get(`/patients/doctor/${doctorId}`);
         setPatients(res.data || []);
       } catch {
         setPatients([]);
@@ -80,11 +76,7 @@ const NewAppointment = ({ onClose }) => {
     setCinResult(null);
     setNewPatientError('');
     try {
-      const token = localStorage.getItem('assistantToken');
-      const res = await api.get(
-        `/admin/patients?cin=${cinSearch}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get(`/admin/patients?cin=${cinSearch}`);
       if (res.data && res.data.length > 0) {
         setCinResult(res.data[0]);
       } else {
@@ -126,15 +118,10 @@ const NewAppointment = ({ onClose }) => {
         return;
       }
       // Create patient (no password, admin will handle)
-      const token = localStorage.getItem('assistantToken');
-      const res = await api.post(
-        '/admin/patients',
-        {
-          ...newPatientForm,
-          password: '', // or null
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post('/admin/patients', {
+        ...newPatientForm,
+        password: '', // or null
+      });
       // After creation, select this patient
       setForm(f => ({ ...f, patientId: res.data.id }));
       setShowNewPatient(false);
@@ -152,25 +139,16 @@ const NewAppointment = ({ onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('assistantToken');
-      // Get doctorId from assistant profile
-      const profileRes = await api.get('/user', {
-        
-      });
-      const doctorId = profileRes.data?.doctor_id;
+      const doctorId = user?.doctor_id;
       if (!doctorId) throw new Error('No doctor assigned');
       if (!form.patientId) throw new Error('Please select a patient');
 
-      await api.post(
-        '/appointments',
-        {
-          doctor_id: doctorId,
-          patient_id: form.patientId,
-          appointment_date: form.appointment_date,
-          type: form.type || 'General'
-        },
-        {  }
-      );
+      await api.post('/appointments', {
+        doctor_id: doctorId,
+        patient_id: form.patientId,
+        appointment_date: form.appointment_date,
+        type: form.type || 'General'
+      });
       if (onClose) {
         onClose();
       } else {

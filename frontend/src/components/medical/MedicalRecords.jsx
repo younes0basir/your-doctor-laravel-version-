@@ -34,6 +34,8 @@ const MedicalRecords = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [patientInfo, setPatientInfo] = useState(null);
+  const [isEditingAge, setIsEditingAge] = useState(false);
+  const [tempAge, setTempAge] = useState('');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -64,8 +66,20 @@ const MedicalRecords = () => {
     try {
       const res = await api.get(`/users/${patientId}`);
       setPatientInfo(res.data);
+      setTempAge(res.data.age || '');
     } catch (err) {
       console.error('Error fetching patient info:', err);
+    }
+  };
+
+  const handleUpdateAge = async () => {
+    try {
+      await api.put(`/users/${patientId}`, { age: tempAge });
+      setPatientInfo({ ...patientInfo, age: tempAge });
+      setIsEditingAge(false);
+      toast.success('Patient age updated');
+    } catch (err) {
+      toast.error('Failed to update age');
     }
   };
 
@@ -620,9 +634,50 @@ const MedicalRecords = () => {
                 Medical Records
               </h1>
               {patientInfo && (
-                <p className="text-gray-600 mt-1">
-                  For: <span className="font-semibold text-blue-700">{patientInfo.first_name} {patientInfo.last_name}</span>
-                </p>
+                <div className="flex items-center gap-4 mt-1">
+                  <p className="text-gray-600">
+                    For: <span className="font-semibold text-blue-700">{patientInfo.first_name} {patientInfo.last_name}</span>
+                  </p>
+                  <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                    <span className="text-sm font-medium text-blue-600 mr-2">Age:</span>
+                    {isEditingAge ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          className="w-16 px-1 py-0.5 border border-blue-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none"
+                          value={tempAge}
+                          onChange={(e) => setTempAge(e.target.value)}
+                          autoFocus
+                        />
+                        <button 
+                          onClick={handleUpdateAge}
+                          className="p-1 text-green-600 hover:bg-green-50 rounded"
+                          title="Save"
+                        >
+                          <FiPlus size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setIsEditingAge(false)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Cancel"
+                        >
+                          <FiXCircle size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gray-700">{patientInfo.age || '—'}</span>
+                        <button 
+                          onClick={() => setIsEditingAge(true)}
+                          className="text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Edit Age"
+                        >
+                          <FiEdit2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
             <div className="flex gap-2">

@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/doctors/by-user/{userId}', [DoctorController::class, 'byUser']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
-// Admin routes
+// Admin routes (Admin only)
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Dashboard & Statistics
     Route::get('/dashboard', [\App\Http\Controllers\Api\AdminController::class, 'dashboard']);
@@ -92,6 +92,23 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/appointments', [\App\Http\Controllers\Api\AdminController::class, 'appointments']);
     Route::patch('/appointments/{id}', [\App\Http\Controllers\Api\AdminController::class, 'updateAppointmentStatus']);
     Route::delete('/appointments/{id}', [\App\Http\Controllers\Api\AdminController::class, 'deleteAppointment']);
+});
+
+// Admin & Assistant shared routes
+Route::middleware(['auth:sanctum', 'admin.or.assistant'])->prefix('admin')->group(function () {
+    // Patient Management (Shared)
+    Route::get('/patients', function (Illuminate\Http\Request $request) {
+        $request->merge(['role' => 'patient']);
+        return (new \App\Http\Controllers\Api\AdminController)->accounts($request);
+    });
+    Route::post('/patients', function (Illuminate\Http\Request $request) {
+        $request->merge([
+            'role' => 'patient',
+            'password' => $request->password ?: 'password123',
+            'status' => 'active'
+        ]);
+        return (new \App\Http\Controllers\Api\AdminController)->createUser($request);
+    });
 });
 
 // Debug catch-all for 404s

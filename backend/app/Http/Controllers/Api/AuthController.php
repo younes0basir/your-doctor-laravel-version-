@@ -77,6 +77,11 @@ class AuthController extends Controller
             $responseData['doctor'] = $user->doctorProfile()->with('user')->first(); // Include user details
         } elseif ($user->role === 'admin') {
             $responseData['admin'] = $user;
+        } elseif ($user->role === 'assistant' && $user->doctor_id) {
+            $doctorUser = User::find($user->doctor_id);
+            if ($doctorUser) {
+                $responseData['doctor'] = $doctorUser->doctorProfile()->with('user')->first();
+            }
         }
 
         return response()->json($responseData);
@@ -104,6 +109,12 @@ class AuthController extends Controller
 
         if ($user->role === 'doctor') {
             $response['doctor'] = $user->doctorProfile;
+        } elseif ($user->role === 'assistant' && $user->doctor_id) {
+            // For assistants, doctor_id points to the doctor's USER id
+            $doctorUser = User::find($user->doctor_id);
+            if ($doctorUser) {
+                $response['doctor'] = $doctorUser->doctorProfile;
+            }
         }
 
         return response()->json($response);

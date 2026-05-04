@@ -3,57 +3,73 @@ import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { 
-  FiUser, 
-  FiFileText, 
+  FiSearch,
+  FiPlus,
+  FiUserPlus,
+  FiX,
+  FiLoader,
   FiPhone,
   FiMail,
   FiCalendar,
-  FiAlertCircle,
-  FiSearch
+  FiUser,
+  FiFileText,
+  FiAlertCircle
 } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 import AssistantSidebar from './AssistantSidebar';
 
+import { useAuth } from '../../context/AuthContext';
+
 const AssistantPatients = () => {
+  const { user, token } = useAuth();
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  
+  // New Patient Modal State
+  const [showNewPatient, setShowNewPatient] = useState(false);
+  const [cinSearch, setCinSearch] = useState('');
+  const [cinSearching, setCinSearching] = useState(false);
+  const [cinResult, setCinResult] = useState(null);
+  const [newPatientForm, setNewPatientForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    age: '',
+    cin: '',
+    gender: 'Male'
+  });
+  const [newPatientLoading, setNewPatientLoading] = useState(false);
+  const [newPatientError, setNewPatientError] = useState('');
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('assistantToken');
-        if (!token) throw new Error('No authentication token found');
-        
-        const profileRes = await api.get('/user', {
-          
-        });
-        
-        const doctorId = profileRes.data?.doctor_id;
-        if (!doctorId) throw new Error('No doctor assigned');
-        
-        const res = await api.get(`/patients/doctor/${doctorId}`, {
-          
-        });
-        
-        setPatients(res.data || []);
-        setFilteredPatients(res.data || []);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch patients');
-        toast.error(err.message || 'Failed to fetch patients');
-        setPatients([]);
-        setFilteredPatients([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchPatients();
-  }, []);
+  const fetchPatients = async () => {
+    if (!token || user?.role !== 'assistant') {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const doctorId = user.doctorProfile?.id;
+      if (!doctorId) throw new Error('No doctor assigned or doctor profile not loaded');
+      
+      const res = await api.get(`/patients/doctor/${doctorId}`);
+      
+      setPatients(res.data || []);
+      setFilteredPatients(res.data || []);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch patients');
+      toast.error(err.message || 'Failed to fetch patients');
+      setPatients([]);
+      setFilteredPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
@@ -76,6 +92,62 @@ const AssistantPatients = () => {
       setFilteredPatients(filtered);
     }
   }, [searchTerm, patients]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [user, token]);
+
+  const handleCinSearch = async (e) => {
+    e.preventDefault();
+    if (!cinSearch.trim()) return;
+    
+    setCinSearching(true);
+    setCinResult(null);
+    setNewPatientError('');
+    try {
+      const res = await api.get(`/admin/patients?search=${cinSearch}`);
+      const data = res.data?.data || res.data;
+      // Search for exact CIN match in the results
+      const exactMatch = Array.isArray(data) ? data.find(p => p.cin === cinSearch) : null;
+      
+      if (exactMatch) {
+        setCinResult(exactMatch);
+        toast.info('Patient already exists in the system.');
+      } else {
+        setNewPatientError('No patient found with this CIN. You can create a new record.');
+      }
+    } catch (err) {
+      setNewPatientError('Error searching for patient.');
+    } finally {
+      setCinSearching(false);
+    }
+  };
+
+  const handleCreateNewPatient = async (e) => {
+    e.preventDefault();
+    setNewPatientLoading(true);
+    setNewPatientError('');
+    try {
+      const payload = {
+        ...newPatientForm,
+        doctor_id: user.doctor_id // Assign to current doctor
+      };
+      
+        await api.post('/admin/patients', payload);
+      toast.success('Patient created successfully!');
+      setShowNewPatient(false);
+      fetchPatients(); // Refresh the list
+    } catch (err) {
+      setNewPatientError(err.response?.data?.message || 'Failed to create patient');
+    } finally {
+      setNewPatientLoading(false);
+    }
+  };
+
+  const handleNewPatientFormChange = (e) => {
+    const { name, value } = e.target;
+    setNewPatientForm(prev => ({ ...prev, [name]: value }));
+  };
 
   if (loading) {
     return (
@@ -102,8 +174,13 @@ const AssistantPatients = () => {
                 <span>{filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'} under your doctor's care</span>
               </div>
             </div>
-            {/* Search Bar */}
-            <div className="mt-4 md:mt-0 w-full md:w-auto">
+            <div className="mt-4 md:mt-0 w-full md:w-auto flex flex-col md:flex-row gap-3">
+              <button
+                onClick={() => setShowNewPatient(true)}
+                className="bg-[#ff5a5f] hover:bg-[#e04a50] text-white px-4 py-2 rounded-lg flex items-center justify-center transition-colors shadow-sm"
+              >
+                <FiPlus className="mr-2" /> Add New Patient
+              </button>
               <div className="relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
@@ -115,16 +192,6 @@ const AssistantPatients = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -231,6 +298,176 @@ const AssistantPatients = () => {
           </div>
         </div>
       </div>
+
+      {/* New Patient Modal */}
+      <AnimatePresence>
+        {showNewPatient && (
+          <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4 overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                  <FiUserPlus className="mr-2 text-[#ff5a5f]" /> Add New Patient
+                </h2>
+                <button 
+                  onClick={() => setShowNewPatient(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <FiX className="h-6 w-6 text-gray-400" />
+                </button>
+              </div>
+
+              {/* CIN Search first */}
+              <div className="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Check if patient already exists (Search by CIN)</label>
+                <form onSubmit={handleCinSearch} className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                    placeholder="Enter patient CIN..."
+                    value={cinSearch}
+                    onChange={(e) => setCinSearch(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    disabled={cinSearching}
+                    className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:bg-gray-400"
+                  >
+                    {cinSearching ? <FiLoader className="animate-spin" /> : <FiSearch />}
+                  </button>
+                </form>
+                {cinResult && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-blue-800 text-sm flex items-center">
+                    <FiUser className="mr-2" />
+                    <span>Found: {cinResult.first_name} {cinResult.last_name} ({cinResult.email})</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleCreateNewPatient} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input
+                      type="text"
+                      name="first_name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                      value={newPatientForm.first_name}
+                      onChange={handleNewPatientFormChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                      value={newPatientForm.last_name}
+                      onChange={handleNewPatientFormChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                    value={newPatientForm.email}
+                    onChange={handleNewPatientFormChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                      value={newPatientForm.phone}
+                      onChange={handleNewPatientFormChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                    <input
+                      type="number"
+                      name="age"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                      value={newPatientForm.age}
+                      onChange={handleNewPatientFormChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CIN</label>
+                    <input
+                      type="text"
+                      name="cin"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none"
+                      value={newPatientForm.cin}
+                      onChange={handleNewPatientFormChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <select
+                      name="gender"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none bg-white"
+                      value={newPatientForm.gender}
+                      onChange={handleNewPatientFormChange}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                </div>
+
+                {newPatientError && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm flex items-center">
+                    <FiAlertCircle className="mr-2" /> {newPatientError}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPatient(false)}
+                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={newPatientLoading}
+                    className="px-6 py-2 bg-[#ff5a5f] text-white rounded-lg hover:bg-[#e04a50] transition-colors disabled:bg-gray-400 flex items-center"
+                  >
+                    {newPatientLoading && <FiLoader className="animate-spin mr-2" />}
+                    Create Patient
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

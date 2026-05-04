@@ -4,248 +4,200 @@ import { toast } from 'react-toastify';
 import AssistantSidebar from './AssistantSidebar';
 import { 
   FiUser,
-  FiMail,
-  FiPhone,
-  FiCalendar,
+  FiClock,
   FiLoader,
   FiAlertCircle,
   FiRefreshCw,
-  FiSearch,
-  FiFileText
+  FiActivity
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 
-const AssistantPatients = () => {
-  const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
+const AssistantQueue = () => {
+  const { user, token } = useAuth();
+  const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    fetchPatients();
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const filtered = patients.filter(patient => {
-      if (!patient) return false;
-      
-      const searchLower = searchTerm.toLowerCase();
-      const firstName = patient.firstName || '';
-      const lastName = patient.lastName || '';
-      const email = patient.email || '';
-      const phone = patient.phoneNumber || '';
+  const fetchQueue = async () => {
+    if (!user?.doctor_id || !token) return;
 
-      return (
-        firstName.toLowerCase().includes(searchLower) ||
-        lastName.toLowerCase().includes(searchLower) ||
-        email.toLowerCase().includes(searchLower) ||
-        phone.includes(searchTerm)
-      );
-    });
-    setFilteredPatients(filtered);
-  }, [searchTerm, patients]);
-
-  const fetchPatients = async () => {
     try {
       setRefreshing(true);
+      const res = await api.get(`/appointments/queue/${user.doctor_id}`);
+      setQueue(res.data || []);
       setError(null);
-      const token = localStorage.getItem('assistantToken');
-      
-      if (!token) {
-        toast.error('Please login to view patients');
-        return;
-      }
-
-      const profileRes = await api.get('/user', {
-        
-      });
-      
-      const doctorId = profileRes.data?.doctor_id;
-      if (!doctorId) {
-        setPatients([]);
-        toast.error('No doctor assigned');
-        return;
-      }
-
-      const res = await api.get(`/patients/doctor/${doctorId}`, {
-        
-      });
-      
-      setPatients(res.data || []);
-      setFilteredPatients(res.data || []);
     } catch (err) {
-      console.error('Error fetching patients:', err);
-      setError('Failed to load patients');
-      toast.error('Failed to load patients');
-      setPatients([]);
+      console.error(err);
+      setError('Failed to load queue data');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Never visited';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  useEffect(() => {
+    if (user?.doctor_id) {
+      fetchQueue();
+      const interval = setInterval(fetchQueue, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const getWaitTime = (arrivalTime) => {
+    if (!arrivalTime) return 'Just arrived';
+    const diff = Math.floor((currentTime - new Date(arrivalTime)) / 60000);
+    return diff < 1 ? 'Just arrived' : `${diff} min`;
   };
 
+  const inConsultation = queue.filter(q => q.queue_status === 'in_consultation');
+  const waiting = queue.filter(q => q.queue_status === 'waiting');
+
+  if (loading && !refreshing) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <AssistantSidebar activeTab="queue" />
+        <div className="flex-1 flex items-center justify-center">
+          <FiLoader className="animate-spin h-10 w-10 text-[#ff5a5f]" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AssistantSidebar activeTab="patients" />
-      <div className="flex-1 overflow-auto p-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 h-full">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="flex min-h-screen bg-gray-50">
+      <AssistantSidebar activeTab="queue" />
+      <div className="flex-1 p-6 md:p-8 overflow-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Doctor's Patients</h1>
-              <p className="text-gray-600">
-                {filteredPatients.length} patient{filteredPatients.length !== 1 ? 's' : ''} under care
-              </p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Doctor's Queue</h1>
+              <p className="text-gray-600 mt-1">Live status of the waiting room</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
+              <div className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
               <button
-                onClick={fetchPatients}
+                onClick={fetchQueue}
                 disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
               >
-                <FiRefreshCw className={`${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Refreshing...' : 'Refresh'}
+                <FiRefreshCw className={`${refreshing ? 'animate-spin' : ''} text-gray-600`} />
               </button>
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search patients by name, email or phone..."
-              className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="flex flex-col items-center gap-4">
-                <FiLoader className="animate-spin h-8 w-8 text-blue-500" />
-                <p className="text-gray-600">Loading patients...</p>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
-              <div className="flex items-center">
-                <FiAlertCircle className="h-6 w-6 text-red-500 mr-4" />
-                <div>
-                  <h3 className="text-lg font-medium text-red-800">Error loading patients</h3>
-                  <p className="mt-1 text-gray-600">
-                    {error}. Please try refreshing the page.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : filteredPatients.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64">
-              <FiUser className="h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-800">
-                {patients.length === 0 ? 'No patients found' : 'No matching patients found'}
-              </h3>
-              <p className="text-gray-500 mt-2">
-                {patients.length === 0 
-                  ? 'Your doctor currently has no patients assigned.' 
-                  : 'Try adjusting your search term.'}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Age
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Visit
-                    </th>
-                    {/* <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th> */}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <FiUser className="text-blue-600 w-5 h-5" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {patient.firstName} {patient.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {patient.gender || 'Not specified'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 flex items-center">
-                          <FiMail className="mr-2 text-gray-400" />
-                          {patient.email}
-                        </div>
-                        <div className="text-sm text-gray-500 flex items-center mt-1">
-                          <FiPhone className="mr-2 text-gray-400" />
-                          {patient.phoneNumber || 'Not provided'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {patient.age ? `${patient.age} years` : 'Not specified'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 flex items-center">
-                          <FiCalendar className="mr-2 text-gray-400" />
-                          {formatDate(patient.lastVisitDate)}
-                        </div>
-                      </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => navigate(`/assistant/patient-history/${patient.id}`)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <FiFileText className="mr-2" />
-                          View
-                        </button>
-                      </td> */}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-8 border border-red-100 flex items-center shadow-sm">
+              <FiAlertCircle className="mr-3 h-5 w-5" />
+              {error}
             </div>
           )}
+
+          <div className="space-y-8">
+            {/* Current Consultation */}
+            <div className="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden">
+              <div className="bg-green-50/50 px-6 py-4 border-b border-green-100 flex items-center">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse mr-3"></div>
+                <h2 className="text-lg font-bold text-green-900 uppercase tracking-wider text-sm">Now In Consultation</h2>
+              </div>
+              <div className="p-6">
+                {inConsultation.length > 0 ? (
+                  inConsultation.map(appt => (
+                    <div key={appt.id} className="flex items-center bg-green-50 p-5 rounded-2xl border border-green-100">
+                      <div className="h-14 w-14 bg-white rounded-full flex items-center justify-center shadow-sm text-green-600 mr-5">
+                        <FiUser className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-xl">
+                          {appt.patient?.first_name} {appt.patient?.last_name}
+                        </h3>
+                        <div className="text-sm text-green-700 flex items-center mt-1 font-medium">
+                          <FiClock className="mr-2" />
+                          Started at {appt.consultation_start_time ? new Date(appt.consultation_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-gray-400 italic font-medium">
+                    The doctor is currently not in consultation
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Waiting List */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider text-sm">Waiting Room</h2>
+                <span className="bg-[#ff5a5f]/10 text-[#ff5a5f] py-1 px-4 rounded-full text-xs font-bold shadow-sm border border-[#ff5a5f]/10">
+                  {waiting.length} Patients Waiting
+                </span>
+              </div>
+              
+              <div className="divide-y divide-gray-100">
+                <AnimatePresence>
+                  {waiting.length > 0 ? (
+                    waiting.map((appt, index) => (
+                      <motion.div 
+                        key={appt.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="p-6 hover:bg-gray-50/50 transition flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold shadow-sm mr-5">
+                            #{index + 1}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {appt.patient?.first_name} {appt.patient?.last_name}
+                            </h3>
+                            <div className="flex items-center mt-1 space-x-5">
+                              <span className="text-sm text-gray-500 flex items-center">
+                                <FiClock className="mr-2" />
+                                Arrived: {appt.arrival_time ? new Date(appt.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                              </span>
+                              <span className={`text-sm font-bold ${parseInt(getWaitTime(appt.arrival_time)) > 30 ? 'text-red-500' : 'text-orange-500'}`}>
+                                Waiting for: {getWaitTime(appt.arrival_time)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="hidden sm:block">
+                          <div className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-500 font-medium">
+                            Status: Waiting
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-16 px-4">
+                      <div className="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                        <FiActivity className="h-10 w-10 text-gray-300" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">The waiting room is empty</h3>
+                      <p className="text-gray-500 max-w-xs mx-auto">There are currently no patients waiting for consultation.</p>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default AssistantPatients;
+export default AssistantQueue;

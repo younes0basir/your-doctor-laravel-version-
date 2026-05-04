@@ -28,6 +28,7 @@ import AssistantDashboard from './components/assistant/AssistantDashboard';
 import AssistantAppointments from './components/assistant/AssistantAppointments';
 import AssistantPatients from './components/assistant/AssistantPatients';
 import AssistantManageQueue from './components/assistant/AssistantManageQueue';
+import AssistantQueue from './components/assistant/AssistantQueue';
 import MedicalRecords from './components/medical/MedicalRecords';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -84,6 +85,7 @@ const App = () => {
           <Route path='/assistant/dashboard' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantDashboard /></ProtectedRoute>} />
           <Route path='/assistant/appointments' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantAppointments /></ProtectedRoute>} />
           <Route path='/assistant/patients' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantPatients /></ProtectedRoute>} />
+          <Route path='/assistant/queue' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantQueue /></ProtectedRoute>} />
           <Route path='/assistant/manage-queue' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantManageQueue /></ProtectedRoute>} />
           <Route path='/assistant/medical-records/:patientId' element={<ProtectedRoute allowedRoles={['assistant']}><MedicalRecords /></ProtectedRoute>} />
           <Route path='/assistant' element={<ProtectedRoute allowedRoles={['assistant']}><AssistantDashboard /></ProtectedRoute>} />

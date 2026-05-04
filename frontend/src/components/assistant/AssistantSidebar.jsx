@@ -12,17 +12,18 @@ import {
   FiActivity
 } from 'react-icons/fi';
 import NewAppointment from './NewAppointment';
+import { useAuth } from '../../context/AuthContext';
 
 const AssistantSidebar = () => {
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showNewAppointment, setShowNewAppointment] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('assistantToken');
-    localStorage.removeItem('assistant');
+    logout();
     toast.success('Logged out successfully');
-    navigate('/portal');
+    navigate('/login');
   };
 
   const menuItems = [

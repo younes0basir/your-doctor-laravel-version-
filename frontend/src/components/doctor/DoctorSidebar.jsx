@@ -87,7 +87,6 @@ const DoctorSidebar = () => {
     setCreateLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
       if (!currentDoctorId) throw new Error('Doctor ID not loaded. Please try again.');
       if (!createForm.patientId) throw new Error('Please select a patient');
@@ -133,7 +132,6 @@ const DoctorSidebar = () => {
     setCinResult(null);
     setNewPatientError('');
     try {
-      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
       const res = await api.get(
         `/admin/patients?cin=${cinSearch}`
@@ -185,7 +183,6 @@ const DoctorSidebar = () => {
         setNewPatientLoading(false);
         return;
       }
-      const token = localStorage.getItem('doctorToken');
       if (!token) throw new Error('No authentication token found');
 
       const res = await api.post(
