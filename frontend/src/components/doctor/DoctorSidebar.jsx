@@ -209,116 +209,139 @@ const DoctorSidebar = () => {
       path: '/doctor/dashboard',
       name: 'Dashboard',
       icon: <FiActivity className="w-5 h-5" />,
-      active: location.pathname === '/doctor/dashboard'
     },
     {
       path: '/doctor/appointments',
       name: 'Appointments',
+      icon: <FiList className="w-5 h-5" />,
+    },
+    {
+      path: '/doctor/schedule',
+      name: 'Advanced Schedule',
       icon: <FiCalendar className="w-5 h-5" />,
-      active: location.pathname === '/doctor/appointments'
     },
     {
       path: '/doctor/office-queue',
       name: 'Patient Queue',
       icon: <FiList className="w-5 h-5" />,
-      active: location.pathname === '/doctor/office-queue'
     },
     {
       path: '/doctor/patients',
       name: 'Patients',
       icon: <FiUsers className="w-5 h-5" />,
-      active: location.pathname === '/doctor/patients'
     },
     {
       path: '/doctor/assistants',
       name: 'Manage Assistant',
       icon: <FiUser className="w-5 h-5" />,
-      active: location.pathname === '/doctor/assistants'
     },
     {
       path: '/doctor/settings',
       name: 'Settings',
       icon: <FiSettings className="w-5 h-5" />,
-      active: location.pathname === '/doctor/settings'
-    }
+    },
   ];
 
   return (
     <div 
-      className="w-64 h-screen flex flex-col"
+      className="w-64 h-screen sticky top-0 flex flex-col flex-shrink-0 z-40"
       style={{ 
         backgroundColor: '#ff5a5f',
         backgroundImage: 'linear-gradient(to bottom, #ff5a5f, #ff4248)'
       }}
     >
       {/* Header */}
-      <div className="p-6 border-b border-red-300/30">
+      <div className="p-6 border-b border-white/10">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-white/90 rounded-lg shadow-sm">
-            <FiUser className="h-6 w-6 text-[#ff5a5f]" />
+          <div className="p-2 bg-white/10 backdrop-blur-md rounded-xl shadow-inner border border-white/20">
+            <FiActivity className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">MediCarePro</h2>
-            <p className="text-xs text-white/80">Doctor Portal</p>
+            <h2 className="text-xl font-bold text-white tracking-tight">MediCarePro</h2>
+            <p className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">Doctor Console</p>
           </div>
         </div>
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 mx-2 ${
-              item.active 
-                ? 'bg-white/90 text-[#ff5a5f] font-medium shadow-sm'
-                : 'text-white/90 hover:bg-white/10 hover:text-white'
-            }`}
+      <div className="flex-1 overflow-y-auto py-6 custom-scrollbar">
+        <div className="px-3 mb-6">
+          <button 
+            className="w-full flex items-center justify-center px-4 py-3 bg-white text-[#ff5a5f] rounded-xl shadow-lg shadow-black/5 hover:bg-red-50 transition-all duration-300 text-sm font-bold active:scale-95"
+            onClick={() => setShowNewAppointment(true)}
           >
-            <span className={`mr-3 ${
-              item.active ? 'text-[#ff5a5f]' : 'text-white/80'
-            }`}>
-              {item.icon}
-            </span>
-            <span className="text-sm">{item.name}</span>
-            {item.active && (
-              <span className="ml-auto h-2 w-2 rounded-full bg-[#ff5a5f]"></span>
-            )}
-          </Link>
-        ))}
+            <FiPlusCircle className="mr-2 w-5 h-5" />
+            New Appointment
+          </button>
+        </div>
 
-        {/* Quick Action */}
-        <button 
-          className="mx-2 mt-6 flex items-center justify-center px-4 py-2 bg-white/90 text-[#ff5a5f] rounded-lg shadow-sm hover:bg-white transition-colors text-sm font-medium"
-          onClick={() => setShowNewAppointment(true)}
-        >
-          <FiPlusCircle className="mr-2" />
-          New Appointment
-        </button>
-      </nav>
+        <nav className="px-3 space-y-1">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  isActive 
+                    ? 'bg-white text-[#ff5a5f] font-bold shadow-md translate-x-1'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <span className={`mr-3 transition-transform duration-300 ${
+                  isActive ? 'text-[#ff5a5f]' : 'text-white/60 group-hover:scale-110'
+                }`}>
+                  {item.icon}
+                </span>
+                <span className="text-sm">{item.name}</span>
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeTab"
+                    className="ml-auto w-1.5 h-1.5 rounded-full bg-[#ff5a5f]"
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-red-300/30">
+      {/* Footer / Logout */}
+      <div className="p-4 border-t border-white/10 bg-black/5">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-4 py-2 text-white/90 hover:bg-white/10 rounded-lg transition-colors group"
+          className="flex items-center w-full px-4 py-3 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 group"
         >
-          <FiLogOut className="mr-3 text-white/80 group-hover:text-white" />
-          <span className="text-sm">Logout</span>
-          <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-            </svg>
-          </span>
+          <FiLogOut className="mr-3 text-white/50 group-hover:rotate-180 transition-transform duration-500" />
+          <span className="text-sm font-medium">Logout System</span>
         </button>
+
+        <div className="mt-4 flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-tighter">Live</span>
+            </div>
+            <span className="text-[10px] font-medium text-white/30 tracking-widest uppercase">
+                {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </span>
+        </div>
       </div>
 
-      {/* Status Bar */}
-      <div className="px-4 py-2 bg-[#e04a50] text-white/80 text-xs flex justify-between">
-        <span>Connected</span>
-        <span>{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-      </div>
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      `}</style>
 
       {/* New Appointment Modal */}
       <AnimatePresence>

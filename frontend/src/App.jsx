@@ -24,6 +24,7 @@ import DoctorPatients from './components/doctor/DoctorPatients';
 import DoctorAssistants from './components/doctor/DoctorAssistants';
 import DoctorSettings from './components/doctor/DoctorSettings';
 import DoctorOfficeQueue from './components/doctor/DoctorOfficeQueue';
+import DoctorSchedule from './components/doctor/DoctorSchedule';
 import AssistantDashboard from './components/assistant/AssistantDashboard';
 import AssistantAppointments from './components/assistant/AssistantAppointments';
 import AssistantPatients from './components/assistant/AssistantPatients';
@@ -78,6 +79,7 @@ const App = () => {
           <Route path='/doctor/assistants' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAssistants /></ProtectedRoute>} />
           <Route path='/doctor/settings' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorSettings /></ProtectedRoute>} />
           <Route path='/doctor/office-queue' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorOfficeQueue /></ProtectedRoute>} />
+          <Route path='/doctor/schedule' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorSchedule /></ProtectedRoute>} />
           <Route path='/doctor/medical-records/:patientId' element={<ProtectedRoute allowedRoles={['doctor']}><MedicalRecords /></ProtectedRoute>} />
           <Route path='/doctor' element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
 

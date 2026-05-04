@@ -14,13 +14,47 @@ const AppointmentBooking = ({ doctorId, consultationFee, onSuccess }) => {
   const [appointmentData, setAppointmentData] = useState({
     type: 'physical'
   });
-  const [bookedSlots] = useState([]); // This would normally be fetched from your backend
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [bookedSlots] = useState([]); // Placeholder for actual booked slots
+
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const res = await api.get(`/doctors/${doctorId}/availabilities`);
+        setBlockedDates(res.data || []);
+      } catch (err) {
+        console.error('Error fetching blocked dates:', err);
+      }
+    };
+    if (doctorId) fetchBlockedDates();
+  }, [doctorId]);
 
   // Check if a time slot should be disabled
   const isTimeSlotDisabled = (time) => {
     const currentTime = new Date();
     const slotDate = new Date(time);
-    return isBefore(slotDate, currentTime);
+    
+    // Check if date is in the past
+    if (isBefore(slotDate, currentTime)) return true;
+
+    // Check if doctor blocked this specific date/time
+    const dateStr = format(slotDate, 'yyyy-MM-dd');
+    const slotTimeStr = format(slotDate, 'HH:mm');
+    
+    const blockRecord = blockedDates.find(b => format(new Date(b.date), 'yyyy-MM-dd') === dateStr && !b.is_available);
+    
+    if (blockRecord) {
+        // If it's a full day block (no start_time)
+        if (!blockRecord.start_time) return true;
+        
+        // If it's a partial block, check if slotTime is between start and end
+        const start = blockRecord.start_time.substring(0, 5); // HH:mm
+        const end = blockRecord.end_time.substring(0, 5); // HH:mm
+        
+        if (slotTimeStr >= start && slotTimeStr <= end) return true;
+    }
+    
+    return false;
   };
 
   // Generate time slots for the selected date
@@ -29,6 +63,16 @@ const AppointmentBooking = ({ doctorId, consultationFee, onSuccess }) => {
     const today = startOfToday();
     const currentTime = new Date();
     
+    // Check if the entire selected date is blocked (no start_time means full day)
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+    const isFullDayBlocked = blockedDates.some(b => 
+      format(new Date(b.date), 'yyyy-MM-dd') === selectedDateStr && 
+      !b.is_available && 
+      !b.start_time
+    );
+
+    if (isFullDayBlocked) return []; // Return empty slots ONLY if the whole day is blocked
+
     for (let hour = 8; hour < 19; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const time = setMinutes(setHours(selectedDate, hour), minute);
@@ -167,7 +211,13 @@ const AppointmentBooking = ({ doctorId, consultationFee, onSuccess }) => {
           <label className="block text-sm font-medium text-[#565656] mb-2">
             Sélectionnez une heure
           </label>
-          <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
+          {timeSlots.length === 0 ? (
+            <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-100 flex items-center gap-2">
+              <span className="font-medium">Ce médecin est indisponible à cette date.</span>
+              <span className="text-sm">(Congé ou absence prévue)</span>
+            </div>
+          ) : (
+            <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
             {timeSlots.map((slot, index) => {
               const isDisabled = slot.isBooked || slot.isPast;
               const buttonTitle = slot.isBooked 
@@ -200,6 +250,7 @@ const AppointmentBooking = ({ doctorId, consultationFee, onSuccess }) => {
               );
             })}
           </div>
+          )}
         </div>
 
         {/* Consultation Type */}

@@ -47,6 +47,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/doctors/upload-logo', [DoctorController::class, 'uploadCabinetLogo']);
     Route::put('/doctors/change-password', [DoctorController::class, 'changePassword']);
     Route::get('/patients/doctor/{id}', [DoctorController::class, 'patients']);
+    Route::get('/doctor/availabilities', [DoctorController::class, 'getAvailabilities']);
+    Route::post('/doctor/availabilities', [DoctorController::class, 'updateAvailability']);
+    Route::get('/doctor/medical-records/{patientId}', [DoctorController::class, 'medicalRecords']);
+    Route::get('/doctor/profile', [DoctorController::class, 'profile']);
     
     // Users management
     Route::apiResource('users', UserController::class);
@@ -70,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // Parameterized public routes (placed after static routes to avoid collisions)
 Route::get('/doctors/by-user/{userId}', [DoctorController::class, 'byUser']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
-
+Route::get('/doctors/{doctorId}/availabilities', [DoctorController::class, 'publicAvailabilities']);
 // Admin routes (Admin only)
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Dashboard & Statistics

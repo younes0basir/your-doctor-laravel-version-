@@ -81,4 +81,12 @@ class Doctor extends Model
     {
         return $this->hasMany(MedicalRecord::class);
     }
+
+    /**
+     * Get the custom availabilities/unavailabilities for the doctor.
+     */
+    public function availabilities()
+    {
+        return $this->hasMany(DoctorAvailability::class);
+    }
 }

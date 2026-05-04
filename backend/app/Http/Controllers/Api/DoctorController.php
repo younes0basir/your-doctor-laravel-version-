@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\User;
 use App\Models\Appointment;
+use App\Models\DoctorAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -399,5 +400,66 @@ class DoctorController extends Controller
         ];
 
         return response()->json($specialities);
+    }
+    /**
+     * Get doctor availabilities for calendar.
+     */
+    public function getAvailabilities(Request $request)
+    {
+        $user = $request->user();
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+
+        $availabilities = $doctor->availabilities()
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return response()->json($availabilities);
+    }
+
+    /**
+     * Toggle availability for a specific date.
+     */
+    public function updateAvailability(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'is_available' => 'required|boolean',
+            'reason' => 'nullable|string|max:255',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+        ]);
+
+        $user = $request->user();
+        $doctor = Doctor::where('user_id', $user->id)->firstOrFail();
+
+        $availability = DoctorAvailability::updateOrCreate(
+            [
+                'doctor_id' => $doctor->id,
+                'date' => $request->date,
+            ],
+            [
+                'is_available' => $request->is_available,
+                'reason' => $request->reason,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Availability updated successfully',
+            'availability' => $availability
+        ]);
+    }
+
+    /**
+     * Get availabilities for a specific doctor (public).
+     */
+    public function publicAvailabilities(string $doctorId)
+    {
+        $availabilities = DoctorAvailability::where('doctor_id', $doctorId)
+            ->where('is_available', false) // We only care about blocked slots for now
+            ->get();
+
+        return response()->json($availabilities);
     }
 }
