@@ -40,6 +40,7 @@ class MedicalRecordController extends Controller
             'treatment' => 'nullable|string',
             'notes' => 'nullable|string',
             'vitals' => 'nullable|array',
+            'prescriptions' => 'nullable|array',
         ]);
 
         \Log::info("Saving Medical Record:", $validated);
@@ -72,6 +73,7 @@ class MedicalRecordController extends Controller
             'treatment' => 'nullable|string',
             'notes' => 'nullable|string',
             'vitals' => 'nullable|array',
+            'prescriptions' => 'nullable|array',
         ]);
 
         $record->update($validated);

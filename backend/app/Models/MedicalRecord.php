@@ -16,11 +16,13 @@ class MedicalRecord extends Model
         'diagnosis',
         'treatment',
         'notes',
-        'vitals'
+        'vitals',
+        'prescriptions'
     ];
 
     protected $casts = [
-        'vitals' => 'array'
+        'vitals' => 'array',
+        'prescriptions' => 'array'
     ];
 
     public function patient()

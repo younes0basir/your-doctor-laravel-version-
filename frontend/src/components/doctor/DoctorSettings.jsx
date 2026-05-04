@@ -454,7 +454,7 @@ const DoctorSettings = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Specialty Description</label>
                   <textarea
                     name="specialty_description"
-                    value={formData.specialty_description}
+                    value={formData.specialty_description || ''}
                     onChange={handleChange}
                     rows="3"
                     className={`w-full px-4 py-2 rounded-lg border ${errors.specialty_description ? 'border-red-500' : 'border-gray-300'} focus:outline-none`}
@@ -524,7 +524,7 @@ const DoctorSettings = () => {
                   </label>
                   <textarea
                     name="address"
-                    value={formData.address}
+                    value={formData.address || ''}
                     onChange={handleChange}
                     rows="2"
                     className={`w-full px-4 py-2 rounded-lg border ${errors.address ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}

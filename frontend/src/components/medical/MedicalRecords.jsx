@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import DoctorSidebar from '../doctor/DoctorSidebar';
 import AssistantSidebar from '../assistant/AssistantSidebar';
+import { searchMedicines } from '../../requests/medicineApi';
+import { FiPrinter } from 'react-icons/fi';
 
 const MedicalRecords = () => {
   const { patientId } = useParams();
@@ -43,8 +45,13 @@ const MedicalRecords = () => {
       blood_pressure: '',
       temperature: '',
       heart_rate: ''
-    }
+    },
+    prescriptions: []
   });
+
+  const [medSearch, setMedSearch] = useState('');
+  const [medResults, setMedResults] = useState([]);
+  const [medLoading, setMedLoading] = useState(false);
 
   useEffect(() => {
     if (patientId) {
@@ -60,6 +67,442 @@ const MedicalRecords = () => {
     } catch (err) {
       console.error('Error fetching patient info:', err);
     }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (medSearch.length > 2) {
+        setMedLoading(true);
+        const results = await searchMedicines(medSearch);
+        setMedResults(results);
+        setMedLoading(false);
+      } else {
+        setMedResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [medSearch]);
+
+  const addMedicine = (med) => {
+    if (formData.prescriptions.find(m => m.id === med.id)) {
+      toast.warning('Already added');
+      return;
+    }
+    setFormData({
+      ...formData,
+      prescriptions: [...formData.prescriptions, { ...med, posology: '', duration: '' }]
+    });
+    setMedSearch('');
+    setMedResults([]);
+  };
+
+  const removeMedicine = (id) => {
+    setFormData({
+      ...formData,
+      prescriptions: formData.prescriptions.filter(m => m.id !== id)
+    });
+  };
+
+  const updateMedicine = (id, field, value) => {
+    setFormData({
+      ...formData,
+      prescriptions: formData.prescriptions.map(m => 
+        m.id === id ? { ...m, [field]: value } : m
+      )
+    });
+  };
+
+  const handlePrint = (record) => {
+    if (!record.prescriptions || record.prescriptions.length === 0) {
+      toast.info('No medications to print in this record.');
+      return;
+    }
+    const printWindow = window.open('', '_blank', 'width=800,height=1100');
+
+    const doctorName = `Dr. ${record.doctor?.user?.first_name || ''} ${record.doctor?.user?.last_name || ''}`.trim();
+    const specialty = record.doctor?.specialty || 'Médecin Généraliste';
+    const doctorAddress = record.doctor?.user?.address || '';
+    const cabinetLogo = record.doctor?.cabinet_logo || '';
+    const recordDate = new Date(record.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const patientName = `${patientInfo?.first_name || ''} ${patientInfo?.last_name || ''}`.trim();
+
+    const medsHtml = record.prescriptions.map((med, idx) => `
+      <tr>
+        <td style="padding: 14px 12px; vertical-align: top; color: #1e3a5f; font-weight: 700; font-size: 13px; width: 30px;">${idx + 1}.</td>
+        <td style="padding: 14px 12px; vertical-align: top;">
+          <div style="font-weight: 700; font-size: 15px; color: #1e3a5f; letter-spacing: 0.3px;">${med.nom || ''}</div>
+          <div style="font-size: 11px; color: #6b7b8d; margin-top: 2px;">${med.forme || ''} ${med.dosage1 ? '— ' + med.dosage1 : ''} ${med.unite_dosage1 || ''}</div>
+        </td>
+        <td style="padding: 14px 12px; vertical-align: top; font-size: 13px; color: #334155;">${med.posology || '—'}</td>
+        <td style="padding: 14px 12px; vertical-align: top; font-size: 13px; color: #334155; white-space: nowrap;">${med.duration ? med.duration + ' mois' : '—'}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <title>Ordonnance — ${patientName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+            @page {
+              size: A4;
+              margin: 15mm 18mm;
+            }
+
+            body {
+              font-family: 'Inter', -apple-system, sans-serif;
+              color: #1e293b;
+              background: #fff;
+              padding: 0;
+              margin: 0;
+              font-size: 13px;
+              line-height: 1.5;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+
+            .page {
+              max-width: 210mm;
+              min-height: 280mm;
+              margin: 0 auto;
+              padding: 36px 40px 30px;
+              position: relative;
+            }
+
+            /* ── Header ── */
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              padding-bottom: 18px;
+              border-bottom: 2.5px solid #1e3a5f;
+              margin-bottom: 0;
+            }
+
+            .header-left {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+            }
+
+            .cabinet-logo {
+              width: 64px;
+              height: 64px;
+              border-radius: 10px;
+              object-fit: contain;
+              border: 1px solid #e2e8f0;
+              background: #f8fafc;
+              padding: 4px;
+            }
+
+            .doctor-name {
+              font-family: 'Playfair Display', Georgia, serif;
+              font-size: 22px;
+              font-weight: 700;
+              color: #1e3a5f;
+              line-height: 1.2;
+            }
+
+            .doctor-specialty {
+              font-size: 12px;
+              font-weight: 500;
+              color: #3b82f6;
+              text-transform: uppercase;
+              letter-spacing: 1.2px;
+              margin-top: 3px;
+            }
+
+            .doctor-address {
+              font-size: 11px;
+              color: #64748b;
+              margin-top: 4px;
+              max-width: 260px;
+            }
+
+            .header-right {
+              text-align: right;
+              font-size: 12px;
+              color: #64748b;
+            }
+
+            .header-right .date-value {
+              font-size: 13px;
+              font-weight: 600;
+              color: #1e3a5f;
+            }
+
+            /* ── Accent bar ── */
+            .accent-bar {
+              height: 3px;
+              background: linear-gradient(90deg, #3b82f6, #1e3a5f 40%, #1e3a5f 60%, #3b82f6);
+              border-radius: 2px;
+            }
+
+            /* ── Patient Info ── */
+            .patient-section {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              background: #f0f5ff;
+              border: 1px solid #dbeafe;
+              border-radius: 8px;
+              padding: 14px 20px;
+              margin: 20px 0;
+            }
+
+            .patient-section .label {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #64748b;
+              font-weight: 600;
+            }
+
+            .patient-section .value {
+              font-size: 14px;
+              font-weight: 600;
+              color: #1e3a5f;
+            }
+
+            /* ── Title ── */
+            .rx-title {
+              text-align: center;
+              margin: 28px 0 20px;
+              position: relative;
+            }
+
+            .rx-title span {
+              display: inline-block;
+              font-family: 'Playfair Display', Georgia, serif;
+              font-size: 16px;
+              font-weight: 700;
+              color: #1e3a5f;
+              text-transform: uppercase;
+              letter-spacing: 4px;
+              padding: 0 24px;
+              background: #fff;
+              position: relative;
+              z-index: 1;
+            }
+
+            .rx-title::before {
+              content: '';
+              position: absolute;
+              left: 0;
+              right: 0;
+              top: 50%;
+              height: 1px;
+              background: #cbd5e1;
+            }
+
+            /* ── Medications Table ── */
+            .meds-table {
+              width: 100%;
+              border-collapse: separate;
+              border-spacing: 0;
+              margin-bottom: 30px;
+            }
+
+            .meds-table thead th {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #64748b;
+              font-weight: 600;
+              padding: 10px 12px;
+              text-align: left;
+              border-bottom: 1.5px solid #e2e8f0;
+            }
+
+            .meds-table tbody tr {
+              border-bottom: 1px solid #f1f5f9;
+            }
+
+            .meds-table tbody tr:last-child {
+              border-bottom: 1.5px solid #e2e8f0;
+            }
+
+            /* ── Notes ── */
+            .notes-section {
+              background: #fafbfc;
+              border-left: 3px solid #3b82f6;
+              padding: 14px 18px;
+              border-radius: 0 6px 6px 0;
+              margin-top: 24px;
+            }
+
+            .notes-label {
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #64748b;
+              font-weight: 600;
+              margin-bottom: 6px;
+            }
+
+            .notes-text {
+              font-size: 12px;
+              color: #475569;
+              line-height: 1.6;
+              font-style: italic;
+            }
+
+            /* ── Signature ── */
+            .signature-block {
+              margin-top: 50px;
+              display: flex;
+              justify-content: flex-end;
+            }
+
+            .signature-inner {
+              text-align: center;
+              width: 220px;
+            }
+
+            .signature-label {
+              font-size: 11px;
+              color: #64748b;
+              font-weight: 500;
+              margin-bottom: 50px;
+            }
+
+            .signature-line {
+              border-top: 1.5px solid #1e3a5f;
+              padding-top: 6px;
+              font-size: 12px;
+              font-weight: 600;
+              color: #1e3a5f;
+            }
+
+            /* ── Footer ── */
+            .doc-footer {
+              position: absolute;
+              bottom: 20px;
+              left: 40px;
+              right: 40px;
+              text-align: center;
+              font-size: 9px;
+              color: #94a3b8;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 10px;
+              letter-spacing: 0.5px;
+            }
+
+            /* ── Print button ── */
+            .print-btn {
+              position: fixed;
+              bottom: 24px;
+              right: 24px;
+              background: linear-gradient(135deg, #1e3a5f, #3b82f6);
+              color: #fff;
+              border: none;
+              padding: 12px 28px;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              box-shadow: 0 4px 14px rgba(30,58,95,0.3);
+              transition: transform 0.15s;
+            }
+
+            .print-btn:hover { transform: translateY(-1px); }
+
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+              .page { padding: 0; min-height: auto; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <!-- Header -->
+            <div class="header">
+              <div class="header-left">
+                ${cabinetLogo ? `<img src="${cabinetLogo}" alt="Cabinet" class="cabinet-logo" />` : ''}
+                <div>
+                  <div class="doctor-name">${doctorName}</div>
+                  <div class="doctor-specialty">${specialty}</div>
+                  ${doctorAddress ? `<div class="doctor-address">${doctorAddress}</div>` : ''}
+                </div>
+              </div>
+              <div class="header-right">
+                <div style="margin-bottom: 4px;">Date</div>
+                <div class="date-value">${recordDate}</div>
+                <div style="margin-top: 8px; font-size: 11px;">Réf: ORD-${String(record.id).padStart(4, '0')}</div>
+              </div>
+            </div>
+
+            <div class="accent-bar"></div>
+
+            <!-- Patient -->
+            <div class="patient-section">
+              <div>
+                <div class="label">Patient</div>
+                <div class="value">${patientName}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="label">Âge</div>
+                <div class="value">${patientInfo?.age || '—'}</div>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <div class="rx-title">
+              <span>Ordonnance Médicale</span>
+            </div>
+
+            <!-- Medications -->
+            <table class="meds-table">
+              <thead>
+                <tr>
+                  <th style="width:30px">N°</th>
+                  <th>Médicament</th>
+                  <th>Posologie</th>
+                  <th>Durée</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${medsHtml}
+              </tbody>
+            </table>
+
+            <!-- Notes -->
+            ${record.notes ? `
+              <div class="notes-section">
+                <div class="notes-label">Observations du médecin</div>
+                <div class="notes-text">${record.notes}</div>
+              </div>
+            ` : ''}
+
+            <!-- Signature -->
+            <div class="signature-block">
+              <div class="signature-inner">
+                <div class="signature-label">Cachet et Signature</div>
+                <div class="signature-line">${doctorName}</div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="doc-footer">
+              Ce document est une ordonnance médicale. Toute modification est interdite. &bull; Généré le ${new Date().toLocaleDateString('fr-FR')}
+            </div>
+          </div>
+
+          <div class="no-print">
+            <button class="print-btn" onclick="window.print()">🖨️ Imprimer l'ordonnance</button>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const fetchRecords = async () => {
@@ -132,8 +575,11 @@ const MedicalRecords = () => {
         blood_pressure: '',
         temperature: '',
         heart_rate: ''
-      }
+      },
+      prescriptions: []
     });
+    setMedSearch('');
+    setMedResults([]);
   };
 
   const handleEdit = (record) => {
@@ -147,7 +593,8 @@ const MedicalRecords = () => {
         blood_pressure: '',
         temperature: '',
         heart_rate: ''
-      }
+      },
+      prescriptions: record.prescriptions || []
     });
     setShowForm(true);
   };
@@ -242,6 +689,15 @@ const MedicalRecords = () => {
                         </div>
                       </div>
                       <div className="flex space-x-2">
+                        {record.prescriptions && record.prescriptions.length > 0 && (
+                          <button 
+                            onClick={() => handlePrint(record)} 
+                            className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            title="Print Prescription"
+                          >
+                            <FiPrinter />
+                          </button>
+                        )}
                         <button onClick={() => handleEdit(record)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                           <FiEdit2 />
                         </button>
@@ -251,17 +707,34 @@ const MedicalRecords = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-400 uppercase mb-2">Treatment / Prescription</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-1">
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase mb-2">Prescription (Ordonnance)</h4>
+                        {record.prescriptions && record.prescriptions.length > 0 ? (
+                          <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 space-y-2">
+                            {record.prescriptions.map((med, idx) => (
+                              <div key={idx} className="text-sm">
+                                <p className="font-bold text-blue-800">{med.nom}</p>
+                                <p className="text-xs text-gray-600">{med.posology} {med.duration && `| ${med.duration}`}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-gray-500 italic text-sm">No structured prescription</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="md:col-span-1">
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase mb-2">Treatment Plan</h4>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <p className="text-gray-700 whitespace-pre-wrap">{record.treatment || 'No treatment specified'}</p>
+                          <p className="text-gray-700 whitespace-pre-wrap text-sm">{record.treatment || 'No treatment specified'}</p>
                         </div>
                       </div>
-                      <div>
+                      <div className="md:col-span-1">
                         <h4 className="text-sm font-semibold text-gray-400 uppercase mb-2">Notes</h4>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <p className="text-gray-700 whitespace-pre-wrap">{record.notes || 'No additional notes'}</p>
+                          <p className="text-gray-700 whitespace-pre-wrap text-sm">{record.notes || 'No additional notes'}</p>
                         </div>
                       </div>
                     </div>
@@ -383,12 +856,83 @@ const MedicalRecords = () => {
                       </div>
                     </div>
 
+                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                      <label className="block text-sm font-semibold text-blue-900 mb-3">Structured Prescription (Ordonnance)</label>
+                      
+                      {/* Search Input */}
+                      <div className="relative mb-4">
+                        <FiSearch className="absolute left-3 top-3 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search medicine (e.g. Paracetamol)..."
+                          className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          value={medSearch}
+                          onChange={(e) => setMedSearch(e.target.value)}
+                        />
+                        {medLoading && <FiLoader className="absolute right-3 top-3 animate-spin text-blue-500" />}
+                      </div>
+
+                      {/* Search Results */}
+                      {medResults.length > 0 && (
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg mb-4 max-h-48 overflow-y-auto absolute z-10 w-[calc(100%-3rem)] max-w-xl">
+                          {medResults.map(med => (
+                            <div 
+                              key={med.id}
+                              onClick={() => addMedicine(med)}
+                              className="p-3 border-b border-gray-50 hover:bg-blue-50 cursor-pointer flex justify-between items-center group"
+                            >
+                              <div>
+                                <p className="font-bold text-gray-800 text-sm">{med.nom}</p>
+                                <p className="text-xs text-gray-500">{med.forme} - {med.dosage1} {med.unite_dosage1}</p>
+                              </div>
+                              <FiPlus className="text-gray-400 group-hover:text-blue-500" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Selected Medications */}
+                      <div className="space-y-3 mt-4">
+                        {formData.prescriptions.map(med => (
+                          <div key={med.id} className="bg-white p-3 rounded-lg border border-blue-200 relative">
+                            <button 
+                              type="button"
+                              onClick={() => removeMedicine(med.id)}
+                              className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
+                            >
+                              <FiTrash2 />
+                            </button>
+                            <p className="font-bold text-blue-700 text-sm mb-2">{med.nom} <span className="text-xs font-normal text-gray-500">({med.forme})</span></p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <input 
+                                type="text"
+                                placeholder="Posology (e.g. 1 tab / 8h)"
+                                value={med.posology || ''}
+                                onChange={(e) => updateMedicine(med.id, 'posology', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                              />
+                              <input 
+                                type="text"
+                                placeholder="Duration (e.g. 5 days)"
+                                value={med.duration || ''}
+                                onChange={(e) => updateMedicine(med.id, 'duration', e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        {formData.prescriptions.length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-2 italic">No medications added yet.</p>
+                        )}
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Treatment / Prescription</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">General Treatment Plan (Text)</label>
                       <textarea
-                        rows="3"
+                        rows="2"
                         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        value={formData.treatment}
+                        value={formData.treatment || ''}
                         onChange={(e) => setFormData({...formData, treatment: e.target.value})}
                         placeholder="Medications, dosage, and instructions..."
                       />
@@ -399,7 +943,7 @@ const MedicalRecords = () => {
                       <textarea
                         rows="4"
                         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        value={formData.notes}
+                        value={formData.notes || ''}
                         onChange={(e) => setFormData({...formData, notes: e.target.value})}
                         placeholder="Detailed clinical notes..."
                       />
