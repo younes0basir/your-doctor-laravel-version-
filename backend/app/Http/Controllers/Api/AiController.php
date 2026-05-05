@@ -312,7 +312,7 @@ class AiController extends Controller
             'patient_id' => $user->id,
             'appointment_date' => $request->date,
             'appointment_time' => $request->time ?: '09:00:00',
-            'type' => 'physical',
+            'type' => 'consultation',
             'reason' => 'Booked via MediAI Assistant',
             'amount' => $doctor->consultation_fee ?? 0,
             'status' => 'pending',
