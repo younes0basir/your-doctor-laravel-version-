@@ -83,6 +83,13 @@ npm run dev
 
 ---
 
+## 👥 Development Team
+
+- **Zoubaa** - [GitHub Profile](https://github.com/zoubaax)
+- **Younes Basir** - [GitHub Profile](https://github.com/younes0basir)
+
+---
+
 ## 📄 License
 This project is for academic purposes. Distributed under the MIT License.
 
