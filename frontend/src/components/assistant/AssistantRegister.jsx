@@ -3,9 +3,11 @@ import api from '../../requests';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaUser, FaLock, FaEnvelope, FaSpinner } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 
 const AssistantRegister = ({ onRegistered }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -21,10 +23,22 @@ const AssistantRegister = ({ onRegistered }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const doctorData = JSON.parse(localStorage.getItem('doctor'));
-      // IMPORTANT: doctorData.id is the Profile ID, doctorData.user_id is the User ID.
-      // The users table doctor_id column references the users table ID, so we MUST use user_id.
-      const doctorId = doctorData?.user_id;
+      // Get the doctor's User ID from multiple sources (in priority order):
+      // 1. AuthContext user (most reliable - works regardless of login page used)
+      // 2. localStorage 'doctor' (set by DoctorLogin.jsx)
+      let doctorId = user?.id; // The logged-in doctor's own User ID
+
+      if (!doctorId) {
+        const doctorData = JSON.parse(localStorage.getItem('doctor'));
+        doctorId = doctorData?.user_id;
+      }
+
+      if (!doctorId) {
+        toast.error('Could not determine doctor ID. Please re-login.');
+        setLoading(false);
+        return;
+      }
+
 
       await api.post('/register', {
         ...form,
