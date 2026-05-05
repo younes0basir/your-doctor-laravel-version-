@@ -109,6 +109,8 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        $this->call(FixAssistantDoctorIdSeeder::class);
+
         $this->command->info('Database seeded successfully!');
         $this->command->info('Admin: admin@yourdoctor.com / password');
         $this->command->info('Doctors and patients created with password: password');

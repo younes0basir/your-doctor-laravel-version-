@@ -22,9 +22,9 @@ const AssistantRegister = ({ onRegistered }) => {
     setLoading(true);
     try {
       const doctorData = JSON.parse(localStorage.getItem('doctor'));
-      // The 'doctor' object in localStorage might be the profile or the user
-      // We need the User ID for the assistant's doctor_id column
-      const doctorId = doctorData?.user_id || doctorData?.id;
+      // IMPORTANT: doctorData.id is the Profile ID, doctorData.user_id is the User ID.
+      // The users table doctor_id column references the users table ID, so we MUST use user_id.
+      const doctorId = doctorData?.user_id;
 
       await api.post('/register', {
         ...form,
