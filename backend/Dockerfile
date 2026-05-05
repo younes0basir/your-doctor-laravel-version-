@@ -30,12 +30,16 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Create necessary directories and set initial permissions
-RUN mkdir -p /var/www/storage /var/www/bootstrap/cache \
+RUN mkdir -p /var/www/storage/framework/cache \
+    && mkdir -p /var/www/storage/framework/sessions \
+    && mkdir -p /var/www/storage/framework/views \
+    && mkdir -p /var/www/storage/logs \
+    && mkdir -p /var/www/bootstrap/cache \
     && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Install composer dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/sites-available/default

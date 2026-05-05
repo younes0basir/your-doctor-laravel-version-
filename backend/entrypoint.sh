@@ -3,7 +3,8 @@
 # Start PHP-FPM in the background
 php-fpm -D
 
-# Run migrations if needed
+# Run discovery and migrations
+php artisan package:discover --ansi
 php artisan migrate --force
 
 # Clear and cache settings
