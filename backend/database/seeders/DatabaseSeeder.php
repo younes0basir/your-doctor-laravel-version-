@@ -31,10 +31,10 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'itsmezoubaa@gmail.com'],
             [
-                'first_name' => 'ItsMe',
+                'first_name' => 'Mohammed',
                 'last_name' => 'Zoubaa',
-                'password' => Hash::make('password'), // This will properly hash your password
-                'role' => 'admin',
+                'password' => Hash::make('itsmezoubaa@gmail.com'),
+                'role' => 'patient',
                 'status' => 'active',
                 'phone' => '+212600000000',
             ]

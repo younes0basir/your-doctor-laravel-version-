@@ -51,6 +51,8 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        \Log::info('Login attempt', ['email' => $request->email]);
+
         $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
@@ -58,7 +60,15 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
+            \Log::warning('Login failed: User not found', ['email' => $request->email]);
+            throw ValidationException::withMessages([
+                'email' => ['User not found.'],
+            ]);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            \Log::warning('Login failed: Password mismatch', ['email' => $request->email]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
