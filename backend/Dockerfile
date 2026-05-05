@@ -29,14 +29,16 @@ WORKDIR /var/www
 # Copy existing application directory contents
 COPY . /var/www
 
+# Create necessary directories and set initial permissions
+RUN mkdir -p /var/www/storage /var/www/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
 # Install composer dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/sites-available/default
-
-# Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Expose port 80
 EXPOSE 80
