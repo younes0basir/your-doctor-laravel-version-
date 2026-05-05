@@ -111,20 +111,25 @@ class AdminController extends Controller
         $period = $request->get('period', '30'); // days
         $startDate = Carbon::now()->subDays($period);
 
-        // Appointments trend - SQLite compatible
+        // Appointments trend - Cross-DB compatible
+        $isPostgres = DB::getDriverName() === 'pgsql';
+        $dateFormat = $isPostgres ? "TO_CHAR(appointment_date, 'YYYY-MM-DD')" : "strftime('%Y-%m-%d', appointment_date)";
+        $createdFormat = $isPostgres ? "TO_CHAR(created_at, 'YYYY-MM-DD')" : "strftime('%Y-%m-%d', created_at)";
+        $monthFormat = $isPostgres ? "TO_CHAR(created_at, 'YYYY-MM')" : "strftime('%Y-%m', created_at)";
+
         $appointmentsTrend = Appointment::select(
-                DB::raw("strftime('%Y-%m-%d', appointment_date) as date"),
+                DB::raw("$dateFormat as date"),
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed')
+                DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed")
             )
             ->where('appointment_date', '>=', $startDate->toDateString())
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
-        // User growth - SQLite compatible
+        // User growth
         $userGrowth = User::select(
-                DB::raw("strftime('%Y-%m-%d', created_at) as date"),
+                DB::raw("$createdFormat as date"),
                 DB::raw('COUNT(*) as count')
             )
             ->where('created_at', '>=', $startDate)
@@ -138,9 +143,9 @@ class AdminController extends Controller
             ->groupBy('type')
             ->get();
 
-        // Monthly revenue - SQLite compatible
+        // Monthly revenue
         $revenue = Appointment::select(
-                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("$monthFormat as month"),
                 DB::raw('SUM(amount) as revenue')
             )
             ->where('payment_status', 'paid')
