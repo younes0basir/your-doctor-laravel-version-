@@ -15,16 +15,30 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
-        $admin = User::create([
-            'first_name' => 'Admin',
-            'last_name' => 'User',
-            'email' => 'admin@yourdoctor.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'status' => 'active',
-            'phone' => '+33123456789',
-        ]);
+        // Create admin users
+        User::updateOrCreate(
+            ['email' => 'admin@yourdoctor.com'],
+            [
+                'first_name' => 'Admin',
+                'last_name' => 'User',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'status' => 'active',
+                'phone' => '+33123456789',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'itsmezoubaa@gmail.com'],
+            [
+                'first_name' => 'ItsMe',
+                'last_name' => 'Zoubaa',
+                'password' => Hash::make('password'), // This will properly hash your password
+                'role' => 'admin',
+                'status' => 'active',
+                'phone' => '+212600000000',
+            ]
+        );
 
         // Create sample doctors
         $doctorUsers = [

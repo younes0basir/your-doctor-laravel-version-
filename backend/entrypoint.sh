@@ -16,7 +16,7 @@ php-fpm -D
 php artisan package:discover --ansi || true
 php artisan config:clear
 php artisan cache:clear
-php artisan migrate --force || echo "Migration failed, check database connection"
+php artisan migrate --force --seed || echo "Migration failed, check database connection"
 php artisan view:cache
 php artisan route:cache
 
