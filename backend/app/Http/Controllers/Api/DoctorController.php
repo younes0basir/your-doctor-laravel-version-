@@ -252,14 +252,18 @@ class DoctorController extends Controller
      */
     public function patients(string $id)
     {
-        // $id is the doctors.id
-        $doctor = Doctor::findOrFail($id);
+        // Resolve: try User ID first (for assistant), then Profile ID (for doctor)
+        $doctor = Doctor::where('user_id', $id)->first();
+        if (!$doctor) {
+            $doctor = Doctor::findOrFail($id);
+        }
+        $doctorProfileId = $doctor->id;
         $doctorUserId = $doctor->user_id;
 
         $patients = User::where('role', 'patient')
-        ->where(function($q) use ($id, $doctorUserId) {
-            $q->whereHas('appointments', function ($query) use ($id) {
-                $query->where('doctor_id', $id);
+        ->where(function($q) use ($doctorProfileId, $doctorUserId) {
+            $q->whereHas('appointments', function ($query) use ($doctorProfileId) {
+                $query->where('doctor_id', $doctorProfileId);
             })
             ->orWhere('doctor_id', $doctorUserId);
         })

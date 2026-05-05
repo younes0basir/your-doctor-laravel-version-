@@ -134,12 +134,12 @@ class AppointmentController extends Controller
      */
     public function doctorAppointments(string $doctorId)
     {
-        // First, check if the provided ID is already a Doctor Profile ID
-        $doctorProfile = Doctor::find($doctorId);
+        // First, check if the provided ID is a User ID (used by assistant components)
+        $doctorProfile = Doctor::where('user_id', $doctorId)->first();
         
-        // If not found by ID, it might be a User ID (fallback for older frontend code or specific views)
+        // If not found by user_id, try as a Doctor Profile ID (used by doctor dashboard)
         if (!$doctorProfile) {
-            $doctorProfile = Doctor::where('user_id', $doctorId)->first();
+            $doctorProfile = Doctor::find($doctorId);
         }
 
         if (!$doctorProfile) {
@@ -195,8 +195,11 @@ class AppointmentController extends Controller
      */
     public function todayQueue(Request $request, string $doctorId)
     {
-        // Handle User ID passed instead of Doctor Profile ID
+        // Resolve: try User ID first, then Doctor Profile ID
         $doctorProfile = \App\Models\Doctor::where('user_id', $doctorId)->first();
+        if (!$doctorProfile) {
+            $doctorProfile = \App\Models\Doctor::find($doctorId);
+        }
         $realDoctorId = $doctorProfile ? $doctorProfile->id : $doctorId;
 
         // SQLite doesn't have FIELD(), so we order by queue_status directly or handle it in collection
