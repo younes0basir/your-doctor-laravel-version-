@@ -73,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Medical Records
     Route::apiResource('medical-records', \App\Http\Controllers\MedicalRecordController::class);
     Route::get('/medical-records/patient/{patientId}', [\App\Http\Controllers\MedicalRecordController::class, 'getByPatient']);
+    Route::get('/medicines/search', [DoctorController::class, 'searchMedicines']);
+    Route::get('/medicines/{id}', [DoctorController::class, 'getMedicineById']);
 });
 
 // Parameterized public routes (placed after static routes to avoid collisions)

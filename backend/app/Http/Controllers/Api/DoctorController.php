@@ -466,4 +466,54 @@ class DoctorController extends Controller
 
         return response()->json($availabilities);
     }
+
+    /**
+     * Proxy search for medicines to avoid CORS issues in frontend.
+     */
+    public function searchMedicines(Request $request)
+    {
+        $query = $request->query('q');
+        $limit = $request->query('limit', 15);
+
+        if (!$query || strlen($query) < 2) {
+            return response()->json(['items' => []]);
+        }
+
+        try {
+            // We search by Name and DCI (Ingredient) in parallel (simulated here)
+            $baseUrl = 'https://medicament-api.vercel.app/api/medicaments';
+            
+            $responseName = \Illuminate\Support\Facades\Http::get($baseUrl, [
+                'nom' => $query,
+                'limit' => $limit
+            ]);
+
+            $responseDci = \Illuminate\Support\Facades\Http::get($baseUrl, [
+                'dci1' => $query,
+                'limit' => $limit
+            ]);
+
+            $nameItems = $responseName->json()['items'] ?? [];
+            $dciItems = $responseDci->json()['items'] ?? [];
+
+            // Merge and remove duplicates
+            $combined = array_merge($nameItems, $dciItems);
+            $unique = collect($combined)->unique('id')->values()->take(20);
+
+            return response()->json(['items' => $unique]);
+        } catch (\Exception $e) {
+            \Log::error("Medicine search failed: " . $e->getMessage());
+            return response()->json(['items' => [], 'error' => 'API Unavailable'], 503);
+        }
+    }
+
+    public function getMedicineById(string $id)
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::get("https://medicament-api.vercel.app/api/medicaments/{$id}");
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'API Unavailable'], 503);
+        }
+    }
 }
