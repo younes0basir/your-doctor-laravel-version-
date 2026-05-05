@@ -1,24 +1,24 @@
 #!/bin/bash
+set -e
 
-# Fix permissions on startup
+# Re-apply permissions on every boot (safety net)
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+chmod -R 777 /var/www/storage
+chmod -R 777 /var/www/bootstrap/cache
 
-# Force logging to stderr for Docker/Render visibility
+# Force logging to stderr so errors show in Render logs
 export LOG_CHANNEL=stderr
 
 # Start PHP-FPM in the background
 php-fpm -D
 
-# Run discovery and migrations
-php artisan package:discover --ansi
-php artisan migrate --force
-
-# Clear and cache settings
+# Run Laravel setup
+php artisan package:discover --ansi || true
 php artisan config:clear
 php artisan cache:clear
+php artisan migrate --force || echo "Migration failed, check database connection"
 php artisan view:cache
 php artisan route:cache
 
-# Start Nginx in the foreground
+# Start Nginx in the foreground (keeps container alive)
 nginx -g "daemon off;"
