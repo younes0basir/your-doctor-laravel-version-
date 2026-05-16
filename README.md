@@ -5,98 +5,105 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![Neon PostgreSQL](https://img.shields.io/badge/Neon_PostgreSQL-00E599?style=for-the-badge&logo=postgresql&logoColor=black)](https://neon.tech)
 
-**YourDoctor** is a comprehensive, modern healthcare management platform designed to bridge the gap between doctors, medical assistants, and patients. It features a robust multi-role dashboard system, AI-powered medical assistance, and real-time appointment management.
+**YourDoctor** est une plateforme de gestion de soins de santé moderne qui connecte médecins, assistants médicaux et patients. Elle propose une interface multi-rôles, la gestion des rendez-vous et un tableau de bord administratif.
+
+Ce projet inclut :
+- un backend Laravel avec API REST sécurisée pour l’authentification, la gestion des rendez-vous, des médecins, des patients et des reviews ;
+- un frontend React/Vite avec Tailwind CSS pour une interface réactive et conviviale ;
+- une organisation de rôles complète (admin, médecin, patient) avec contrôles d’accès et vues adaptées ;
+- des pages de consultation et de gestion des dossiers médicaux, des plannings et des statuts de file d’attente.
 
 ---
 
-## 👥 Development Team
+## 🚀 Installation et démarrage
 
-- **Zoubaa** - [GitHub Profile](https://github.com/zoubaax)
-- **Younes Basir** - [GitHub Profile](https://github.com/younes0basir)
+### Prérequis
+- PHP 8.2 ou supérieur
+- Composer
+- Node.js 18 ou supérieur
+- NPM
+- PostgreSQL local ou Neon PostgreSQL
 
-
----
-
-## 🌟 Key Features
-
-### 👨‍⚕️ Doctor Dashboard
-- **Advanced Scheduling**: Interactive calendar with FullCalendar integration.
-- **Queue Management**: Real-time patient flow control (Today's Queue).
-- **Medical Records**: Structured digital prescriptions with integrated medication search.
-- **Assistant Management**: Delegate tasks and manage permissions for medical assistants.
-
-### 📋 Assistant Dashboard
-- **Patient Onboarding**: Streamlined registration and appointment booking.
-- **Dynamic Queue**: Manage waiting rooms and update appointment statuses live.
-- **Doctor Synchronization**: Real-time view of doctor availability and schedules.
-
-### 🤖 MediAI Integration
-- **Smart Assistance**: AI-powered clinical support and booking assistance.
-- **Automated Workflows**: Intelligent parsing of medical queries.
-
-### 🛡️ Admin Portal
-- **Global Statistics**: Visual insights into clinic performance using Chart.js.
-- **User Management**: Complete CRUD operations for all user roles.
-- **System Verification**: Verification workflows for medical professionals.
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-| :--- | :--- |
-| **Backend** | Laravel 10+, PHP 8.2 |
-| **Frontend** | React 18, Vite, Tailwind CSS |
-| **Database** | Neon PostgreSQL (Serverless) |
-| **State Management** | React Context API |
-| **Animations** | Framer Motion |
-| **Charts/Data** | Chart.js, Recharts |
-| **Scheduling** | FullCalendar.js |
-| **API Integration** | Medication Proxy API (Vercel) |
-
----
-
-## 🚀 Installation & Setup
-
-### Prerequisites
-- PHP 8.2+ & Composer
-- Node.js 18+ & NPM
-- PostgreSQL (or Neon account)
-
-### 1. Backend Setup
+### 1. Installation du backend
 ```bash
 cd backend
 composer install
 cp .env.example .env
-# Configure your DATABASE_URL in .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
 ```
 
-### 2. Frontend Setup
+- Ouvrez `backend/.env`
+- Configurez `DATABASE_URL` ou les variables :
+  - `DB_HOST`
+  - `DB_PORT`
+  - `DB_DATABASE`
+  - `DB_USERNAME`
+  - `DB_PASSWORD`
+
+```bash
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+Le backend sera disponible sur `http://127.0.0.1:8000`.
+
+### 2. Installation du frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
----
+Le frontend sera disponible sur l’adresse affichée par Vite, généralement `http://127.0.0.1:5173`.
 
-## 🛠️ Recent Improvements (Major Fixes)
-
-- **Unified ID Resolution**: Fixed critical production bug where assistant accounts could not see patient data due to ID mismatch between User and Profile records.
-- **Medication API Proxy**: Implemented a Laravel-based proxy for the `medicament-api` to bypass CORS issues and ensure 100% reliability for digital prescriptions.
-- **Auto-healing Seeders**: Developed `FixAssistantDoctorIdSeeder` to automatically repair legacy data relationships during deployment.
-
----
-
-
-
-
-## 📄 License
-This project is for academic purposes. Distributed under the MIT License.
+### 3. Utilisation
+- Lancez d’abord le backend.
+- Ensuite lancez le frontend.
+- Connectez-vous avec un compte de test.
 
 ---
 
-*Designed and Developed for Advanced Healthcare Management Systems.*
+## 👤 Comptes de test
+
+| Rôle | Email | Mot de passe |
+| --- | --- | --- |
+| Administrateur | `admin@yourdoctor.com` | `password` |
+| Médecin | `dr.dupont@yourdoctor.com` | `password` |
+| Médecin | `dr.martin@yourdoctor.com` | `password` |
+| Médecin | `dr.bernard@yourdoctor.com` | `password` |
+| Patient | `itsmezoubaa@gmail.com` | `itsmezoubaa@gmail.com` |
+| Patient | `sophie@email.com` | `password` |
+| Patient | `lucas@email.com` | `password` |
+| Patient | `emma@email.com` | `password` |
+
+> Les médecins et patients sont créés avec le mot de passe `password` par défaut.
+
+---
+
+## 🧩 Fonctionnalités principales
+
+- Tableau de bord médecin avec gestion des rendez-vous et file d’attente.
+- Portail assistant pour la prise en charge des patients.
+- Console administrateur pour la gestion des comptes et des statistiques.
+- Intégration d’API médicales et planification en temps réel.
+
+---
+
+## 🛠️ Stack technique
+
+| Composant | Technologie |
+| :--- | :--- |
+| Backend | Laravel 10+, PHP 8.2 |
+| Frontend | React 18, Vite, Tailwind CSS |
+| Base de données | PostgreSQL / Neon |
+| Gestion d’état | React Context API |
+| Animations | Framer Motion |
+| Graphiques | Chart.js, Recharts |
+| Planning | FullCalendar.js |
+
+---
+
+## 📄 Licence
+Ce projet est destiné à un usage académique et est distribué sous licence MIT.
+
+
