@@ -14,6 +14,13 @@ Ce projet inclut :
 - des pages de consultation et de gestion des dossiers médicaux, des plannings et des statuts de file d’attente.
 
 ---
+## 👥 Development Team
+
+- **Zoubaa** - [GitHub Profile](https://github.com/zoubaax)
+- **Younes Basir** - [GitHub Profile](https://github.com/younes0basir)
+
+
+---
 
 ## 🚀 Installation et démarrage
 
